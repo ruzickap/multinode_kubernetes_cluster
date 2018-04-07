@@ -15,6 +15,7 @@ By running the scripts you got access to 4 node cluster.
 
 Packages (+dependencies):
 * git
+* kubectl
 * qemu-system-x86
 * qemu-utils
 * vagrant-libvirt
@@ -27,7 +28,19 @@ Packages (+dependencies):
 ## Usage
 
 Simply run one of the commands and wait for few minutes.
+
 You can see the example of such execution here:
+
+Use these commands to test your connection to the cluster:
+
+```
+test -f $PWD/kubespray/inventory/mycluster/artifacts/admin.conf && export KUBECONFIG=$PWD/kubespray/inventory/mycluster/artifacts/admin.conf
+test -f $PWD/config && export KUBECONFIG=$PWD/config
+
+kubectl get nodes
+kubectl get pods --all-namespaces
+kubectl cluster-info
+```
 
 ## License
 

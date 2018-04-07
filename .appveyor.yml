@@ -1,0 +1,31 @@
+image: ubuntu
+
+environment:
+  global:
+    VAGRANT_URL: https://releases.hashicorp.com/vagrant/2.0.3/vagrant_2.0.3_x86_64.deb
+  matrix:
+    - SCRIPT: run-kubeadm.sh
+    - SCRIPT: run-kubespray.sh
+
+install:
+- |-
+  sudo -i -- << EOF
+  set -eux
+  apt-get update -qq
+  apt-get install -qq -y ansible gcc git libvirt-bin libvirt-dev qemu-system-x86 qemu-utils
+  wget -q -P /tmp/ $VAGRANT_URL
+  apt-get install -qq /tmp/vagrant*.deb
+  rm /tmp/vagrant*.deb
+  vagrant plugin install vagrant-hostmanager
+  vagrant plugin install vagrant-libvirt
+  EOF
+
+build_script:
+- |-
+  sudo -i -- << EOF
+  set -eux
+  cd $APPVEYOR_BUILD_FOLDER
+  # Disable KVM acceleration (Appveyor does not support nested virtualization)
+  sed -i 's/domain.driver = "kvm"/domain.driver = "qemu"/' Vagrantfile
+  $APPVEYOR_BUILD_FOLDER/$SCRIPT
+  EOF
