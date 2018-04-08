@@ -12,7 +12,7 @@ install:
   sudo -i -- << EOF
   set -eux
   apt-get update -qq
-  apt-get install -qq -y ansible gcc git libvirt-bin libvirt-dev qemu-system-x86 qemu-utils
+  apt-get install -qq -y ansible gcc git jq libvirt-bin libvirt-dev pv qemu-system-x86 qemu-utils
   wget -q -P /tmp/ $VAGRANT_URL
   apt-get install -qq /tmp/vagrant*.deb
   rm /tmp/vagrant*.deb

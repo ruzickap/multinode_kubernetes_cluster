@@ -3,6 +3,7 @@
 USER="vagrant"
 SSH_ARGS="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 POD_NETWORK_CIDR="10.244.0.0/16"
+KUBERNETES_VERSION="1.9.1-00"
 CNI_URL="https://raw.githubusercontent.com/coreos/flannel/v0.10.0/Documentation/kube-flannel.yml"
 
 test -f $HOME/.ssh/id_rsa || ( install -m 0700 -d $HOME/.ssh && ssh-keygen -b 2048 -t rsa -f $HOME/.ssh/id_rsa -q -N "" )
@@ -34,7 +35,7 @@ cat > /etc/apt/sources.list.d/kubernetes.list << EOF2
 deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF2
 apt-get update -qq
-apt-get install -y -qq docker.io kubelet kubeadm kubectl
+apt-get install -y -qq docker.io kubelet=$KUBERNETES_VERSION kubeadm=$KUBERNETES_VERSION kubectl=$KUBERNETES_VERSION
 
 kubeadm init --pod-network-cidr=$POD_NETWORK_CIDR
 
@@ -58,7 +59,7 @@ cat > /etc/apt/sources.list.d/kubernetes.list << EOF2
 deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF2
 apt-get update -qq
-apt-get install -y -qq docker.io kubelet kubeadm kubectl
+apt-get install -y -qq docker.io kubelet=$KUBERNETES_VERSION kubeadm=$KUBERNETES_VERSION kubectl=$KUBERNETES_VERSION
 
 $KUBEADM_TOKEN_COMMAND
 EOF
