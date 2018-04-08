@@ -24,7 +24,6 @@ Vagrant.configure(2) do |config|
     end
   end
 
-  config.vm.provision 'shell', inline: "mkdir /mnt/disks"
   config.vm.provision 'shell', inline: "install -m 0700 -d /root/.ssh/; echo #{ssh_pub_key} >> /root/.ssh/authorized_keys; chmod 0600 /root/.ssh/authorized_keys"
   config.vm.provision 'shell', inline: "echo #{ssh_pub_key} >> /home/vagrant/.ssh/authorized_keys", privileged: false
 end
