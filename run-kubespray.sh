@@ -48,11 +48,11 @@ EOF
 
 #Install Python (if needed) which is requirement for Ansible
 ansible --user vagrant -i inventory/mycluster/hosts.ini -m raw -a 'sudo bash -x -c "test -e /usr/bin/python || ( test -x /usr/bin/apt && ( apt -qqy update && apt install -y python-minimal ) || ( test -x /usr/bin/dnf && dnf install -y python ))"' all
-
 ansible-playbook --user vagrant --become -i inventory/mycluster/hosts.ini cluster.yml
+cd ..
 
-ssh vagrant@node1 << EOF
-set -x
+cp kubespray/inventory/mycluster/artifacts/admin.conf kubeconfig.conf
+
+export KUBECONFIG=$PWD/kubeconfig.conf
 kubectl get nodes
 kubectl get pods --all-namespaces=true
-EOF

@@ -64,8 +64,8 @@ $KUBEADM_TOKEN_COMMAND
 EOF
 done
 
-ssh vagrant@node1 << EOF
-set -x
+scp vagrant@node1:~/.kube/config kubeconfig.conf
+
+export KUBECONFIG=$PWD/kubeconfig.conf
 kubectl get nodes
 kubectl get pods --all-namespaces=true
-EOF

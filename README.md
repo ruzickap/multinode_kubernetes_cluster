@@ -43,11 +43,10 @@ You can see the example of such executions here:
 * `run-kubespray.sh`
 [![asciicast](https://asciinema.org/a/174965.png)](https://asciinema.org/a/174965)
 
-Use these commands to test your connection to the cluster:
+Once you installed the cluster use these commands to test your connection:
 
 ```
-test -f $PWD/kubespray/inventory/mycluster/artifacts/admin.conf && export KUBECONFIG=$PWD/kubespray/inventory/mycluster/artifacts/admin.conf
-test -f $PWD/config && export KUBECONFIG=$PWD/config
+export KUBECONFIG=$PWD/kubeconfig.conf
 
 kubectl get nodes
 kubectl get pods --all-namespaces
