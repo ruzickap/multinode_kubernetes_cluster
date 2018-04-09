@@ -6,6 +6,18 @@ POD_NETWORK_CIDR="10.244.0.0/16"
 KUBERNETES_VERSION="1.9.1-00"
 CNI_URL="https://raw.githubusercontent.com/coreos/flannel/v0.10.0/Documentation/kube-flannel.yml"
 
+INSTALL_KUBERNETES="
+export DEBIAN_FRONTEND='noninteractive'
+apt-get update -qq && apt-get install -y -qq apt-transport-https curl
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+cat > /etc/apt/sources.list.d/kubernetes.list << EOF2
+deb https://apt.kubernetes.io/ kubernetes-xenial main
+EOF2
+apt-get update -qq
+apt-get install -y -qq docker.io kubelet=$KUBERNETES_VERSION kubeadm=$KUBERNETES_VERSION kubectl=$KUBERNETES_VERSION
+"
+
+
 test -f $HOME/.ssh/id_rsa || ( install -m 0700 -d $HOME/.ssh && ssh-keygen -b 2048 -t rsa -f $HOME/.ssh/id_rsa -q -N "" )
 
 VAGRANT_DEFAULT_PROVIDER=libvirt vagrant up
@@ -16,7 +28,7 @@ NODE3_IP=`getent hosts node3 | cut -d' ' -f1`
 NODE4_IP=`getent hosts node4 | cut -d' ' -f1`
 
 for COUNTER in {1..4}; do
-  ssh root@node$COUNTER $SSH_ARGS << EOF
+  ssh root@node$COUNTER $SSH_ARGS /bin/bash << EOF
     cat >> /etc/hosts << EOF2
 $NODE1_IP node1 node1.cluster.local
 $NODE2_IP node2 node2.cluster.local
@@ -27,15 +39,8 @@ EOF
 done
 
 # Master configuration
-ssh root@node1 $SSH_ARGS << EOF
-export DEBIAN_FRONTEND="noninteractive"
-apt-get update -qq && apt-get install -y -qq apt-transport-https curl
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-cat > /etc/apt/sources.list.d/kubernetes.list << EOF2
-deb https://apt.kubernetes.io/ kubernetes-xenial main
-EOF2
-apt-get update -qq
-apt-get install -y -qq docker.io kubelet=$KUBERNETES_VERSION kubeadm=$KUBERNETES_VERSION kubectl=$KUBERNETES_VERSION
+ssh root@node1 $SSH_ARGS /bin/bash << EOF
+$INSTALL_KUBERNETES
 
 kubeadm init --pod-network-cidr=$POD_NETWORK_CIDR
 
@@ -51,16 +56,8 @@ KUBEADM_TOKEN_COMMAND=`ssh root@node1 $SSH_ARGS "kubeadm token create --print-jo
 
 for COUNTER in {2..4}; do
   echo "*** node$COUNTER"
-  ssh root@node$COUNTER $SSH_ARGS << EOF
-export DEBIAN_FRONTEND="noninteractive"
-apt-get update -qq && apt-get install -y -qq apt-transport-https curl
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-cat > /etc/apt/sources.list.d/kubernetes.list << EOF2
-deb https://apt.kubernetes.io/ kubernetes-xenial main
-EOF2
-apt-get update -qq
-apt-get install -y -qq docker.io kubelet=$KUBERNETES_VERSION kubeadm=$KUBERNETES_VERSION kubectl=$KUBERNETES_VERSION
-
+  ssh root@node$COUNTER $SSH_ARGS /bin/bash << EOF
+$INSTALL_KUBERNETES
 $KUBEADM_TOKEN_COMMAND
 EOF
 done
