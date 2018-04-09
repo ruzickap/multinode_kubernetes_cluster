@@ -1,10 +1,12 @@
 #!/bin/bash -eux
 
-USER="vagrant"
+MYUSER="vagrant"
 SSH_ARGS="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 POD_NETWORK_CIDR="10.244.0.0/16"
-KUBERNETES_VERSION="1.9.1-00"
-CNI_URL="https://raw.githubusercontent.com/coreos/flannel/v0.10.0/Documentation/kube-flannel.yml"
+#KUBERNETES_VERSION="1.10.0"
+KUBERNETES_VERSION="1.9.0"
+#CNI_URL="https://raw.githubusercontent.com/coreos/flannel/v0.10.0/Documentation/kube-flannel.yml"
+CNI_URL="https://raw.githubusercontent.com/coreos/flannel/v0.9.0/Documentation/kube-flannel.yml"
 
 INSTALL_KUBERNETES="
 export DEBIAN_FRONTEND='noninteractive'
@@ -14,7 +16,7 @@ cat > /etc/apt/sources.list.d/kubernetes.list << EOF2
 deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF2
 apt-get update -qq
-apt-get install -y -qq docker.io kubelet=$KUBERNETES_VERSION kubeadm=$KUBERNETES_VERSION kubectl=$KUBERNETES_VERSION
+apt-get install -y -qq docker.io kubelet=${KUBERNETES_VERSION}-00 kubeadm=${KUBERNETES_VERSION}-00 kubectl=${KUBERNETES_VERSION}-00
 "
 
 
@@ -28,41 +30,40 @@ NODE3_IP=`getent hosts node3 | cut -d' ' -f1`
 NODE4_IP=`getent hosts node4 | cut -d' ' -f1`
 
 for COUNTER in {1..4}; do
-  ssh root@node$COUNTER $SSH_ARGS /bin/bash << EOF
+  ssh -t ${MYUSER}@node$COUNTER $SSH_ARGS "sudo /bin/bash -c '
     cat >> /etc/hosts << EOF2
 $NODE1_IP node1 node1.cluster.local
 $NODE2_IP node2 node2.cluster.local
 $NODE3_IP node3 node3.cluster.local
 $NODE4_IP node4 node4.cluster.local
-EOF2
-EOF
+EOF2'"
 done
 
 # Master configuration
-ssh root@node1 $SSH_ARGS /bin/bash << EOF
+ssh -t ${MYUSER}@node1 $SSH_ARGS "sudo /bin/bash -c '
 $INSTALL_KUBERNETES
 
-kubeadm init --pod-network-cidr=$POD_NETWORK_CIDR
+kubeadm init --pod-network-cidr=$POD_NETWORK_CIDR --kubernetes-version v${KUBERNETES_VERSION}
 
-test -d /home/$USER/.kube || mkdir /home/$USER/.kube
-cp -i /etc/kubernetes/admin.conf /home/$USER/.kube/config
-chown -R $USER:$USER /home/$USER/.kube
+test -d /home/$MYUSER/.kube || mkdir /home/$MYUSER/.kube
+cp -i /etc/kubernetes/admin.conf /home/$MYUSER/.kube/config
+chown -R $MYUSER:$MYUSER /home/$MYUSER/.kube
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
 kubectl apply -f $CNI_URL
-EOF
+'"
 
-KUBEADM_TOKEN_COMMAND=`ssh root@node1 $SSH_ARGS "kubeadm token create --print-join-command"`
+KUBEADM_TOKEN_COMMAND=`ssh -t ${MYUSER}@node1 $SSH_ARGS "sudo kubeadm token create --print-join-command"`
 
 for COUNTER in {2..4}; do
   echo "*** node$COUNTER"
-  ssh root@node$COUNTER $SSH_ARGS /bin/bash << EOF
+  ssh -t ${MYUSER}@node$COUNTER $SSH_ARGS "sudo /bin/bash -c '
 $INSTALL_KUBERNETES
 $KUBEADM_TOKEN_COMMAND
-EOF
+'"
 done
 
-scp vagrant@node1:~/.kube/config kubeconfig.conf
+scp ${MYUSER}@node1:~/.kube/config kubeconfig.conf
 
 export KUBECONFIG=$PWD/kubeconfig.conf
 kubectl get nodes
