@@ -57,10 +57,10 @@ KUBEADM_TOKEN_COMMAND=`ssh -t ${MYUSER}@node1 $SSH_ARGS "sudo kubeadm token crea
 
 for COUNTER in {2..4}; do
   echo "*** node$COUNTER"
-  ssh -t ${MYUSER}@node$COUNTER $SSH_ARGS "sudo /bin/bash -c '
+  nohup ssh -t ${MYUSER}@node$COUNTER $SSH_ARGS "sudo /bin/bash -c '
 $INSTALL_KUBERNETES
 $KUBEADM_TOKEN_COMMAND
-'"
+'" &
 done
 
 scp ${MYUSER}@node1:~/.kube/config kubeconfig.conf
