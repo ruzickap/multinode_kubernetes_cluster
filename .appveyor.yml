@@ -1,31 +1,24 @@
 image: ubuntu
 
-environment:
-  global:
-    VAGRANT_URL: https://releases.hashicorp.com/vagrant/2.0.3/vagrant_2.0.3_x86_64.deb
-  matrix:
-    - SCRIPT: run-kubeadm.sh
-    - SCRIPT: run-kubespray.sh
-
 install:
-- |-
-  sudo -i -- << EOF
-  set -eux
-  apt-get update -qq
-  apt-get install -qq -y ansible gcc git jq libvirt-bin libvirt-dev pv qemu-system-x86 qemu-utils
-  wget -q -P /tmp/ $VAGRANT_URL
-  apt-get install -qq /tmp/vagrant*.deb
-  rm /tmp/vagrant*.deb
-  vagrant plugin install vagrant-hostmanager
-  vagrant plugin install vagrant-libvirt
-  EOF
+  - sudo --set-home pip install --quiet -r docs/requirements.txt
+  - sudo apt-get install -qq jq
 
 build_script:
-- |-
-  sudo -i -- << EOF
-  set -eux
-  cd $APPVEYOR_BUILD_FOLDER
-  # Disable KVM acceleration (Appveyor does not support nested virtualization)
-  sed -i 's/domain.driver = "kvm"/domain.driver = "qemu"/' Vagrantfile
-  $APPVEYOR_BUILD_FOLDER/$SCRIPT
-  EOF
+  - sphinx-build -nW -b html docs/source /tmp/html
+  - sphinx-build -nW -b linkcheck docs/source /tmp/linkcheck
+
+  # Download ans install minikube
+  # Download kubectl, which is a requirement for using minikube
+  - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
+  - chmod +x kubectl
+  - sudo mv kubectl /usr/local/bin/
+  # Download minikube
+  - curl -sL https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 -o minikube
+  - chmod +x minikube
+  - sudo mv minikube /usr/local/bin/
+  - sudo CHANGE_MINIKUBE_NONE_USER=true minikube start --vm-driver=none --memory=4096 --kubernetes-version=v1.10.0
+  # Wait for Kubernetes to be up and ready (https://blog.travis-ci.com/2017-10-26-running-kubernetes-on-travis-ci-with-minikube)
+  - JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
+  # Run commands form specific rst files
+  - for RST_FILE in docs/source/{02..07}*.rst docs/source/{09..13}*.rst; do sed -n "s/^   \$\{0,1\}\(.*\)/\1/p" $RST_FILE; done | bash -ex

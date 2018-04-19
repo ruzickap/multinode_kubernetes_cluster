@@ -1,3 +1,5 @@
 .vagrant
 demo-magic.sh
 files
+kubeconfig.conf
+nohup.out
