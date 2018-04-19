@@ -168,7 +168,7 @@ Check the pods and list changes as they happen
    $ kubectl get pods --watch -o wide &
    $ sleep 10
 
-Stop the port forwarding
+Stop getting the pods
 
 .. code-block:: shell-session
 

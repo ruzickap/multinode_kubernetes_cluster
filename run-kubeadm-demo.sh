@@ -690,7 +690,7 @@ p  "############################################################################
 wait
 
 p  ""
-p  "# Stop port forwarding"
+p  "# Stop getting the pods"
 pe 'pkill -f "kubectl get pods --watch -o wide"'
 
 p  ""
