@@ -39,7 +39,7 @@ For Ubuntu Xenial (16.04) you can see the installation details here: [.appveyor.
 
 Simply run one of the commands `run-kubeadm.sh` or `run-kubespray.sh` and wait for few minutes.
 
-You can see the example of such executions here:
+You can see the example of scripts executions here:
 
 * `run-kubeadm.sh`
 [![asciicast](https://asciinema.org/a/174963.png)](https://asciinema.org/a/174963)
