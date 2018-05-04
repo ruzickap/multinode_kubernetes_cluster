@@ -25,7 +25,7 @@ Start pod from the pod manifest via Kubernetes API (see the 'ContainerCreating' 
 .. code-block:: shell-session
 
    $ kubectl apply --filename=files/kuard-pod.yaml; kubectl get pods
-   $ sleep 20
+   $ sleep 40
 
 List pods (-o yaml will print all details)
 

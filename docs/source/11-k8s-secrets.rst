@@ -73,3 +73,9 @@ Stop port forwarding
 .. code-block:: shell-session
 
    $ pkill -f "kubectl port-forward kuard-tls 8443:8443"
+
+Delete pod
+
+.. code-block:: shell-session
+
+   $ kubectl delete pod kuard-tls

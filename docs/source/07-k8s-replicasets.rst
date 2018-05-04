@@ -51,7 +51,7 @@ Check if pod is part of ReplicaSet
 
 .. code-block:: shell-session
 
-   $ kubectl get pods -o json | jq ".items[].metadata"
+   $ kubectl get pods -l app=kuard,version=2 -o json | jq ".items[].metadata"
 
 Scale up ReplicaSet
 
@@ -63,7 +63,7 @@ New pods are beeing created
 
 .. code-block:: shell-session
 
-   $ kubectl get pods -l app=kuard
+   $ kubectl get pods -l app=kuard --show-labels
 
 Delete ReplicaSet
 

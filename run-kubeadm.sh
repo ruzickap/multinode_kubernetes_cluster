@@ -25,15 +25,15 @@ VAGRANT_DEFAULT_PROVIDER=libvirt vagrant up
 NODE1_IP=`getent hosts node1 | cut -d' ' -f1`
 NODE2_IP=`getent hosts node2 | cut -d' ' -f1`
 NODE3_IP=`getent hosts node3 | cut -d' ' -f1`
-NODE4_IP=`getent hosts node4 | cut -d' ' -f1`
 
-for COUNTER in {1..4}; do
+for COUNTER in {1..3}; do
   ssh -t ${MYUSER}@node$COUNTER $SSH_ARGS "sudo /bin/bash -c '
+    sed -i 's/^#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.d/99-sysctl.conf
+    sysctl --quiet --system
     cat >> /etc/hosts << EOF2
 $NODE1_IP node1 node1.cluster.local
 $NODE2_IP node2 node2.cluster.local
 $NODE3_IP node3 node3.cluster.local
-$NODE4_IP node4 node4.cluster.local
 EOF2'"
 done
 
@@ -48,12 +48,13 @@ cp -i /etc/kubernetes/admin.conf /home/$MYUSER/.kube/config
 chown -R $MYUSER:$MYUSER /home/$MYUSER/.kube
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
+
 kubectl apply -f $CNI_URL
 '"
 
 KUBEADM_TOKEN_COMMAND=`ssh -t ${MYUSER}@node1 $SSH_ARGS "sudo kubeadm token create --print-join-command"`
 
-for COUNTER in {2..4}; do
+for COUNTER in {2..3}; do
   echo "*** node$COUNTER"
   nohup ssh -t ${MYUSER}@node$COUNTER $SSH_ARGS "sudo /bin/bash -c '
 $INSTALL_KUBERNETES
@@ -66,4 +67,17 @@ scp ${MYUSER}@node1:~/.kube/config kubeconfig.conf
 export KUBECONFIG=$PWD/kubeconfig.conf
 kubectl get nodes
 
-echo "*** Wait few minutes for the worker nodes to join..."
+echo "*** Allow pods to be scheduled on the master"
+kubectl taint nodes node1 node-role.kubernetes.io/master-
+
+echo "*** Enable routing from local machine (host) to the kubernetes pods/services/etc"
+echo "*** Adding routes (10.244.0.0/16, 10.96.0.0/12) -> [$NODE1_IP]"
+sudo bash -c "ip route | grep -q 10.244.0.0/16 && ip route del 10.244.0.0/16; ip route add 10.244.0.0/16 via $NODE1_IP"
+sudo bash -c "ip route | grep -q 10.96.0.0/12  && ip route del 10.96.0.0/12;  ip route add 10.96.0.0/12  via $NODE1_IP"
+
+cat << \EOF
+*** Wait few minutes for the worker nodes to join..."
+*** Start with:
+export KUBECONFIG=$PWD/kubeconfig.conf
+kubectl get nodes
+EOF

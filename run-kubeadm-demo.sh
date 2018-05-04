@@ -29,15 +29,14 @@ export NO_WAIT=true
 #DEMO_PROMPT="${GREEN}➜ ${CYAN}\W "
 DEMO_PROMPT="${GREEN}➜ ${CYAN}$ "
 
-# Use predefined kubeconfig.conf Kubernetes Configuration File
-test -f $PWD/kubeconfig.conf || ( echo "*** Can not find Kubernetes config file: $PWD/kubeconfig.conf !!!"; exit 1)
-export KUBECONFIG=$PWD/kubeconfig.conf
+# Check if kubeconfig.conf can be used
+test -f $PWD/kubeconfig.conf || echo "*** Can not find Kubernetes config file: $PWD/kubeconfig.conf !!!"
 
 # SSH default parameters
 SSH_ARGS=" -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no "
 
-# The Kubernetes will be upgradede to this version (it's expected that the cluster is running "older" version)
-KUBERNETES_UPGRADE_VERSION="1.10.1"
+# The Kubernetes version
+KUBERNETES_VERSION="1.10.0"
 
 test -d files || mkdir files
 
@@ -47,6 +46,9 @@ clear
 
 p  "# Enable bash-completion for kubectl (bash-completion needs to be installed)"
 pe 'source <(kubectl completion bash)'
+
+p  '# Use the correct kubeconfig'
+pe 'export KUBECONFIG=$PWD/kubeconfig.conf'
 
 
 p  ""
@@ -103,13 +105,139 @@ pe 'helm repo update'
 
 p  ""
 ################################################
-p  "*** Heapster"
+p  "*** nginx-ingress"
+################################################
+
+
+p  ""
+p  "# Install nginx-ingress"
+pe 'helm install stable/nginx-ingress --wait --name my-nginx --set \
+controller.daemonset.useHostPort=true,\
+controller.kind=DaemonSet,\
+controller.metrics.enabled=true,\
+controller.service.type=NodePort,\
+controller.stats.enabled=true,\
+rbac.create=true,\
+'
+pe 'kubectl get pods --all-namespaces -l app=nginx-ingress -o wide'
+
+p  ""
+p  "################################################################################################### Press <ENTER> to continue"
+wait
+
+
+p  ""
+################################################
+p  "*** rook"
+################################################
+
+
+pe 'helm repo add rook-master https://charts.rook.io/master'
+pe 'helm install rook-master/rook --wait --namespace rook-system --name my-rook --version $(helm search rook | awk "/^rook/ { print \$2 }")'
+p  '# Create your Rook cluster'
+pe 'kubectl create -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/rook-cluster.yaml'
+p  '# Running the Toolbox with ceph commands'
+pe 'kubectl create -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/rook-tools.yaml'
+p  '# Create a storage class based on the Ceph RBD volume plugin'
+pe 'kubectl create -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/rook-storageclass.yaml'
+p  '# Create a shared file system which can be mounted read-write from multiple pods'
+pe 'kubectl create -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/rook-filesystem.yaml'
+pe 'sleep 150'
+
+p  '# Check the status of your Ceph installation'
+pe 'kubectl -n rook exec rook-tools -- ceph status'
+pe 'kubectl -n rook exec rook-tools -- ceph osd status'
+
+p  '# Check health detail of Ceph cluster'
+pe 'kubectl -n rook exec rook-tools -- ceph health detail'
+
+p  '# Check monitor quorum status of Ceph'
+pe 'kubectl -n rook exec rook-tools -- ceph quorum_status --format json-pretty'
+
+p  '# Dump monitoring information from Ceph'
+pe 'kubectl -n rook exec rook-tools -- ceph mon dump'
+
+p  '# Check the cluster usage status'
+pe 'kubectl -n rook exec rook-tools -- ceph df'
+
+p  '# Check OSD usage of Ceph'
+pe 'kubectl -n rook exec rook-tools -- ceph osd df'
+
+p  '# Check the Ceph monitor, OSD, pool, and placement group stats'
+pe 'kubectl -n rook exec rook-tools -- ceph mon stat'
+pe 'kubectl -n rook exec rook-tools -- ceph osd stat'
+pe 'kubectl -n rook exec rook-tools -- ceph osd pool stats'
+pe 'kubectl -n rook exec rook-tools -- ceph pg stat'
+
+p  '# List the placement group'
+pe 'kubectl -n rook exec rook-tools -- ceph pg dump'
+
+p  '# List the Ceph pools in detail'
+pe 'kubectl -n rook exec rook-tools -- ceph osd pool ls detail'
+
+p  'Check the CRUSH map view of OSDs'
+pe 'kubectl -n rook exec rook-tools -- ceph osd tree'
+
+p  '# List the cluster authentication keys'
+pe 'kubectl -n rook exec rook-tools -- ceph auth list'
+
+# ceph osd utilization
+
+p  ""
+p  "################################################################################################### Press <ENTER> to continue"
+wait
+
+
+p  ""
+################################################
+p  "*** prometheus (and it's dependencies)"
+################################################
+
+
+p  ""
+p  "# Install prometheus"
+pe 'helm repo add coreos https://s3-eu-west-1.amazonaws.com/coreos-charts/stable/'
+pe 'helm install coreos/prometheus-operator --wait --name my-prometheus-operator --namespace monitoring'
+pe 'helm install coreos/kube-prometheus --name my-kube-prometheus --namespace monitoring --set \
+alertmanager.ingress.enabled=true,\
+alertmanager.ingress.hosts[0]=alertmanager.domain.com,\
+alertmanager.storageSpec.volumeClaimTemplate.spec.storageClassName=rook-block,\
+alertmanager.storageSpec.volumeClaimTemplate.spec.accessModes[0]=ReadWriteOnce,\
+alertmanager.storageSpec.volumeClaimTemplate.spec.resources.requests.storage=20Gi,\
+grafana.adminPassword=admin123,\
+grafana.ingress.enabled=true,\
+grafana.ingress.hosts[0]=grafana.domain.com,\
+prometheus.ingress.enabled=true,\
+prometheus.ingress.hosts[0]=prometheus.domain.com,\
+prometheus.storageSpec.volumeClaimTemplate.spec.storageClassName=rook-block,\
+prometheus.storageSpec.volumeClaimTemplate.spec.accessModes[0]=ReadWriteOnce,\
+prometheus.storageSpec.volumeClaimTemplate.spec.resources.requests.storage=20Gi,\
+'
+
+pe 'GRAFANA_PASSWORD=$(kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{.data.password}" | base64 --decode ; echo)'
+pe 'echo "Grafana login: admin / $GRAFANA_PASSWORD"'
+
+
+p  ""
+################################################
+p  "*** heapster"
 ################################################
 
 
 p  ""
 p  "# Install heapster"
-pe 'helm install --name my-heapster stable/heapster --set rbac.create=true'
+pe 'helm install stable/heapster --name my-heapster --set rbac.create=true'
+
+
+p  ""
+################################################
+p  "*** kubernetes-dashboard"
+################################################
+
+
+p  ""
+p  "# Install kubernetes-dashboard"
+pe 'helm install stable/kubernetes-dashboard --name=my-kubernetes-dashboard --namespace monitoring --set ingress.enabled=true,rbac.clusterAdminRole=true'
 
 p  ""
 p  "################################################################################################### Press <ENTER> to continue"
@@ -144,7 +272,7 @@ pe 'cat files/kuard-pod.yaml'
 p  ""
 p  "# Start pod from the pod manifest via Kubernetes API (see the 'ContainerCreating' status)"
 pe 'kubectl apply --filename=files/kuard-pod.yaml; kubectl get pods'
-pe 'sleep 20'
+pe 'sleep 40'
 
 p  ""
 p  "# List pods (-o yaml will print all details)"
@@ -443,7 +571,7 @@ pe 'kubectl get pods -l app=kuard,version=2 --show-labels'
 
 p  ""
 p  "# Check if pod is part of ReplicaSet"
-pe 'kubectl get pods -o json | jq ".items[].metadata"'
+pe 'kubectl get pods -l app=kuard,version=2 -o json | jq ".items[].metadata"'
 
 p  ""
 p  "# Scale up ReplicaSet"
@@ -451,7 +579,7 @@ pe 'kubectl scale replicasets kuard --replicas=4'
 
 p  ""
 p  "# New pods are beeing created"
-pe 'kubectl get pods -l app=kuard'
+pe 'kubectl get pods -l app=kuard --show-labels'
 
 p  ""
 p  "# Delete ReplicaSet"
@@ -471,7 +599,7 @@ p  "*** DaemonSets + NodeSelector usage - run pods only on nodes with proper lab
 
 p  ""
 p  "# Add labels to your nodes (hosts)"
-pe 'kubectl label nodes node{2,4} ssd=true'
+pe 'kubectl label nodes node2 ssd=true'
 
 p  ""
 p  "# Filter nodes based on labels"
@@ -517,7 +645,7 @@ p  "# Add label ssd=true to the node3 - nginx should be deployed there automatic
 pe 'kubectl label nodes node3 ssd=true'
 
 p  ""
-p  "# Check the nodes where nginx was deployed"
+p  "# Check the nodes where nginx was deployed (it should be also on node3 with ssd=true label)"
 pe 'kubectl get pods -o wide'
 
 p  ""
@@ -1039,6 +1167,11 @@ p  "# Stop port forwarding"
 pe 'pkill -f "kubectl port-forward kuard-tls 8443:8443"'
 
 p  ""
+p  "# Delete pod"
+pe 'kubectl delete pod kuard-tls'
+
+
+p  ""
 ################################################
 p  "*** Deployments - create deployment, change docker image, rollback"
 ################################################
@@ -1394,108 +1527,21 @@ wait
 
 p  ""
 ################################################
-p  "*** Kuberenetes upgrade"
-################################################
-
-
-p  ""
-p  "# Check the version of the nodes"
-pe 'kubectl get nodes'
-
-p  ""
-p  "# Show versions of Kubernetes components"
-pe 'kubectl get pods --namespace=kube-system -o=json | jq -r ".items[].spec.containers[] | .name + \" \" + .image" | column --table'
-
-p  ""
-p  "# Upgrade only the kubeadm first"
-pe 'ssh $SSH_ARGS vagrant@node1 "sudo sh -xc \" apt-get update -qq && cd /tmp && apt-get download kubeadm=${KUBERNETES_UPGRADE_VERSION}-00; dpkg --force-all -i kubeadm*amd64.deb \""'
-
-p  ""
-p  "# Perform the upgrade"
-pe 'ssh $SSH_ARGS vagrant@node1 "sudo kubeadm upgrade apply v${KUBERNETES_UPGRADE_VERSION} --yes"'
-pe 'sleep 10'
-
-p  ""
-p  "# Upgrade CNI (flannel)"
-pe 'kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.10.0/Documentation/kube-flannel.yml'
-
-p  ""
-p  "# Check the version on the nodes - master shloud be upgraded"
-pe 'kubectl get nodes'
-
-p  ""
-p  "# Show versions of Kubernetes components"
-pe 'kubectl get pods --namespace=kube-system -o=json | jq -r ".items[].spec.containers[] | .name + \" \" + .image" | column --table'
-
-p  ""
-p  "################################################################################################### Press <ENTER> to continue"
-wait
-
-p  ""
-p  "# Let's upgrade node1 form the OS level point of view"
-p  "# Move all pods away from node1 (if you get the 'unable to drain' error - it is fine for master node)"
-pe 'kubectl drain --ignore-daemonsets node1'
-
-p  ""
-p  "# All pods from node1 should be somewhere else"
-pe 'kubectl get pods -o wide'
-
-p  ""
-p  "# Apply the upgrade plan"
-pe 'ssh $SSH_ARGS vagrant@node1 "sudo sh -xc \" apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq kubelet=${KUBERNETES_UPGRADE_VERSION}-00 kubeadm=${KUBERNETES_UPGRADE_VERSION}-00 kubectl=${KUBERNETES_UPGRADE_VERSION}-00 \""'
-
-p  ""
-p  "# Check the version on the nodes - see the SchedulingDisabled on node1"
-pe 'kubectl get nodes'
-
-p  ""
-p  "# Enable node1 again"
-pe 'kubectl uncordon node1'
-pe 'sleep 10'
-
-p  ""
-p  "# node1 is ready again"
-pe 'kubectl get nodes'
-
-p  ""
-p  "# See which pods are running on the node1"
-pe 'kubectl get pods -o wide'
-
-p  ""
-p  "################################################################################################### Press <ENTER> to continue"
-wait
-
-p  ""
-p  "# Repeat the same steps for all nodes one by one"
-pe 'set -x; for COUNT in {2..4}; do sleep 30; kubectl drain --ignore-daemonsets node${COUNT}; ssh $SSH_ARGS vagrant@node${COUNT} "sudo sh -xc \" apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get upgrade -qq -y kubelet=${KUBERNETES_UPGRADE_VERSION}-00 kubeadm=${KUBERNETES_UPGRADE_VERSION}-00 kubectl=${KUBERNETES_UPGRADE_VERSION}-00 \""; kubectl uncordon node${COUNT}; kubectl get nodes; kubectl get pods -o wide; done; set +x'
-pe 'sleep 10'
-
-p  ""
-p  "# Check all the nodes"
-pe 'kubectl get nodes'
-
-p  ""
-p  "################################################################################################### Press <ENTER> to continue"
-wait
-
-
-p  ""
-################################################
 p  "*** Node replacement"
 ################################################
 
 
 p  ""
-p  "# Move all pods away from node2"
-pe 'kubectl drain --ignore-daemonsets node2'
+p  "# Move all pods away from node3"
+pe 'kubectl drain --delete-local-data --ignore-daemonsets node3'
 
 p  ""
 p  "# Get pod details"
 pe 'kubectl get pods -o wide'
 
 p  ""
-p  "# Destroy the node node2"
-pe 'vagrant destroy -f node2'
+p  "# Destroy the node node3"
+pe 'vagrant destroy -f node3'
 
 p  ""
 p  "# Wait some time for Kubernetes to catch up..."
@@ -1506,12 +1552,12 @@ p  "############################################################################
 wait
 
 p  ""
-p  "# The node2 shoult be in 'NotReady' state"
+p  "# The node3 shoult be in 'NotReady' state"
 pe 'kubectl get nodes'
 
 p  ""
-p  "# Remove the node2 from the cluster"
-pe 'kubectl delete node node2'
+p  "# Remove the node3 from the cluster"
+pe 'kubectl delete node node3'
 
 p  ""
 p  "# Generate command which can add new node to Kubernetes cluster"
@@ -1519,23 +1565,23 @@ pe 'KUBERNETES_JOIN_CMD=$(ssh $SSH_ARGS root@node1 "kubeadm token create --print
 
 p  ""
 p  "# Start new node"
-pe 'vagrant up node2'
+pe 'vagrant up node3'
 
 p  ""
 p  "# Install Kubernetes repository to new node"
-pe 'ssh $SSH_ARGS vagrant@node2 "sudo sh -xc \" DEBIAN_FRONTEND=noninteractive apt-get install -y apt-transport-https curl > /dev/null; curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -; echo deb https://apt.kubernetes.io/ kubernetes-xenial main > /etc/apt/sources.list.d/kubernetes.list \""'
+pe 'ssh $SSH_ARGS vagrant@node3 "sudo sh -xc \" DEBIAN_FRONTEND=noninteractive apt-get install -y apt-transport-https curl > /dev/null; curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -; echo deb https://apt.kubernetes.io/ kubernetes-xenial main > /etc/apt/sources.list.d/kubernetes.list \""'
 
 p  ""
 p  "# Install Kubernetes packages"
-pe 'ssh $SSH_ARGS vagrant@node2 "sudo sh -xc \" apt-get update -qq; DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io kubelet=${KUBERNETES_UPGRADE_VERSION}-00 kubeadm=${KUBERNETES_UPGRADE_VERSION}-00 kubectl=${KUBERNETES_UPGRADE_VERSION}-00 > /dev/null \""'
+pe 'ssh $SSH_ARGS vagrant@node3 "sudo sh -xc \" apt-get update -qq; DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io kubelet=${KUBERNETES_VERSION}-00 kubeadm=${KUBERNETES_VERSION}-00 kubectl=${KUBERNETES_VERSION}-00 > /dev/null \""'
 
 p  ""
-p  "# Join node2 to the Kuberenets cluster"
-pe 'ssh $SSH_ARGS vagrant@node2 "sudo sh -xc \" $KUBERNETES_JOIN_CMD \""'
-pe 'sleep 30'
+p  "# Join node3 to the Kuberenets cluster"
+pe 'ssh $SSH_ARGS vagrant@node3 "sudo sh -xc \" $KUBERNETES_JOIN_CMD \""'
+pe 'sleep 40'
 
 p  ""
-p  "# Check the nodes - node2 should be there"
+p  "# Check the nodes - node3 should be there"
 pe 'kubectl get nodes'
 
 p  ""

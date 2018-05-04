@@ -1,7 +1,7 @@
 Kubernetes Installation
 =======================
 
-It's expected, that you will install Kubernetes to 4 VMs / hosts - to have multinode installation.
+It's expected, that you will install Kubernetes to 3 VMs / hosts - to have multinode installation.
 The installation part is taken from these two URLs:
 
 - https://kubernetes.io/docs/setup/independent/install-kubeadm/
@@ -16,6 +16,13 @@ SSH to the first VM which will be your Master node:
 .. code-block:: shell-session
 
    $ ssh root@node1
+
+Enable packet forwarding:
+
+.. code-block:: shell-session
+
+   $ sed -i 's/^#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.d/99-sysctl.conf
+   $ sysctl --quiet --system
 
 Set the Kubernetes version which will be installed:
 
@@ -83,15 +90,13 @@ Your Kuberenets Master node should be ready now. You can check it using this com
 Worker nodes installation
 -------------------------
 
-Let's connect the worker nodes now
-
+Let's connect the worker nodes now.
 SSH to the worker nodes and repeat these commands on all of them in paralel:
 
 .. code-block:: shell-session
 
    $ ssh root@node2
    $ ssh root@node3
-   $ ssh root@node4
 
 Set the Kubernetes version which will be installed:
 
@@ -108,6 +113,13 @@ Add the Kubernetes repository (`details <https://kubernetes.io/docs/setup/indepe
    $ tee /etc/apt/sources.list.d/kubernetes.list << EOF2
    deb https://apt.kubernetes.io/ kubernetes-xenial main
    EOF2
+
+Enable packet forwarding:
+
+.. code-block:: shell-session
+
+   $ sed -i 's/^#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.d/99-sysctl.conf
+   $ sysctl --quiet --system
 
 Install necessary packages:
 
@@ -129,15 +141,14 @@ You sould see something like:
 
    $ kubeadm join <master-ip>:<master-port> --token <token> --discovery-token-ca-cert-hash sha256:<hash>
 
-Execute the generated command on all worker nodes.
+Execute the generated command on all worker nodes:
 
 .. code-block:: shell-session
 
    $ ssh -t root@node2 "kubeadm join --token ..."
    $ ssh -t root@node3 "kubeadm join --token ..."
-   $ ssh -t root@node4 "kubeadm join --token ..."
 
-SSH back to the master nodes and check the cluster status - all the nodes should appear there in "Ready" status after while.
+SSH back to the master nodes and check the cluster status - all the nodes should appear there in "Ready" status after while:
 
 .. code-block:: shell-session
 
@@ -145,6 +156,19 @@ SSH back to the master nodes and check the cluster status - all the nodes should
    $ # Check nodes
    $ kubectl get nodes
 
+Allow pods to be scheduled on the master:
+
+.. code-block:: shell-session
+
+   $ kubectl taint nodes node1 node-role.kubernetes.io/master-
+
+Enable routing from local machine (host) to the kubernetes pods/services/etc.
+Adding routes (10.244.0.0/16, 10.96.0.0/12) -> [$NODE1_IP]:
+
+.. code-block:: shell-session
+
+   $ sudo bash -c "ip route | grep -q 10.244.0.0/16 && ip route del 10.244.0.0/16; ip route add 10.244.0.0/16 via $NODE1_IP"
+   $ sudo bash -c "ip route | grep -q 10.96.0.0/12  && ip route del 10.96.0.0/12;  ip route add 10.96.0.0/12  via $NODE1_IP"
 
 Real installation example
 -------------------------

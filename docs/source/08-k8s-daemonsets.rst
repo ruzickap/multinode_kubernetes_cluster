@@ -5,7 +5,7 @@ Add labels to your nodes (hosts)
 
 .. code-block:: shell-session
 
-   $ kubectl label nodes node{2,4} ssd=true
+   $ kubectl label nodes node2 ssd=true
 
 Filter nodes based on labels
 
@@ -58,7 +58,7 @@ Add label ssd=true to the node3 - nginx should be deployed there automatically
 
    $ kubectl label nodes node3 ssd=true
 
-Check the nodes where nginx was deployed
+Check the nodes where nginx was deployed (it should be also on node3 with ssd=true label)
 
 .. code-block:: shell-session
 

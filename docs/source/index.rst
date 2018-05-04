@@ -35,6 +35,5 @@ step-by-step instructions for hands-on exercises.
    13-k8s-endpoints.rst
    14-k8s-selfhealing.rst
    15-k8s-persistent_storage.rst
-   16-k8s-kubernetes_upgrade.rst
-   17-k8s-node_replacement.rst
-   18-k8s-other_notes.rst
+   16-k8s-node_replacement.rst
+   17-k8s-other_notes.rst
