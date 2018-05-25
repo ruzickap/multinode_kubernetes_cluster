@@ -32,7 +32,7 @@ Halt one of the nodes (node2)
 .. code-block:: shell-session
 
    $ vagrant halt node2
-   $ sleep 20
+   $ sleep 30
 
 Get node details - node2 Status=NotReady
 
@@ -60,7 +60,7 @@ Sleeping for 5 minutes
 
    $ sleep 300
 
-Get pods details - Status=Unknown and new container was started
+Get pods details - Status=Unknown/NodeLost and new container was started
 
 .. code-block:: shell-session
 

@@ -25,7 +25,6 @@ Vagrant.configure(2) do |config|
       config.vm.network :private_network,
         :ip => "192.168.220.#{i+10}",
         :mac => "52:54:00:00:25:#{i+10}",
-        # 126.168.220.1 - 126.168.223.254
         :libvirt__netmask => "255.255.252.0",
         :libvirt__network_name => "k8s_network",
         :libvirt__dhcp_enabled => false,

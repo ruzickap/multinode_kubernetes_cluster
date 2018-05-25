@@ -11,7 +11,7 @@ Install NFS client to other nodes
 
 .. code-block:: shell-session
 
-   $ for COUNT in {2..4}; do ssh $SSH_ARGS vagrant@node${COUNT} "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nfs-common > /dev/null"; done
+   $ for COUNT in {2..4}; do ssh $SSH_ARGS vagrant@node${COUNT} "sudo sh -xc \"apt-get update -qq; DEBIAN_FRONTEND=noninteractive apt-get install -y nfs-common > /dev/null\""; done
 
 Show persistent volume object definition
 

@@ -11,7 +11,7 @@ Get pod details
 
 .. code-block:: shell-session
 
-   $ kubectl get pods -o wide
+   $ kubectl get pods -o wide --all-namespaces | grep node3
 
 Destroy the node node3
 
@@ -23,13 +23,13 @@ Wait some time for Kubernetes to catch up...
 
 .. code-block:: shell-session
 
-   $ sleep 30
+   $ sleep 40
 
 The node3 shoult be in 'NotReady' state
 
 .. code-block:: shell-session
 
-   $ kubectl get nodes
+   $ kubectl get pods -o wide --all-namespaces
 
 Remove the node3 from the cluster
 
@@ -53,7 +53,7 @@ Install Kubernetes repository to new node
 
 .. code-block:: shell-session
 
-   $ ssh $SSH_ARGS vagrant@node3 "sudo sh -xc \" DEBIAN_FRONTEND=noninteractive apt-get install -y apt-transport-https curl > /dev/null; curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -; echo deb https://apt.kubernetes.io/ kubernetes-xenial main > /etc/apt/sources.list.d/kubernetes.list \""
+   $ ssh $SSH_ARGS vagrant@node3 "sudo sh -xc \" apt-get update -qq; DEBIAN_FRONTEND=noninteractive apt-get install -y apt-transport-https curl > /dev/null; curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -; echo deb https://apt.kubernetes.io/ kubernetes-xenial main > /etc/apt/sources.list.d/kubernetes.list \""
 
 Install Kubernetes packages
 

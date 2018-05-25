@@ -27,7 +27,7 @@ NODE2_IP=`getent hosts node2 | cut -d' ' -f1`
 NODE3_IP=`getent hosts node3 | cut -d' ' -f1`
 
 for COUNTER in {1..3}; do
-  ssh -t ${MYUSER}@node$COUNTER $SSH_ARGS "sudo /bin/bash -c '
+  ssh -t ${MYUSER}@node$COUNTER ${SSH_ARGS} "sudo /bin/bash -c '
     sed -i 's/^#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.d/99-sysctl.conf
     sysctl --quiet --system
     cat >> /etc/hosts << EOF2
@@ -38,7 +38,7 @@ EOF2'"
 done
 
 # Master configuration
-ssh -t ${MYUSER}@node1 $SSH_ARGS "sudo /bin/bash -c '
+ssh -t ${MYUSER}@node1 ${SSH_ARGS} "sudo /bin/bash -cx '
 $INSTALL_KUBERNETES
 
 kubeadm init --pod-network-cidr=$POD_NETWORK_CIDR --kubernetes-version v${KUBERNETES_VERSION}
@@ -52,11 +52,11 @@ export KUBECONFIG=/etc/kubernetes/admin.conf
 kubectl apply -f $CNI_URL
 '"
 
-KUBEADM_TOKEN_COMMAND=`ssh -t ${MYUSER}@node1 $SSH_ARGS "sudo kubeadm token create --print-join-command"`
+KUBEADM_TOKEN_COMMAND=`ssh -t ${MYUSER}@node1 ${SSH_ARGS} "sudo kubeadm token create --print-join-command"`
 
 for COUNTER in {2..3}; do
   echo "*** node$COUNTER"
-  nohup ssh -t ${MYUSER}@node$COUNTER $SSH_ARGS "sudo /bin/bash -c '
+  nohup ssh -t ${MYUSER}@node$COUNTER ${SSH_ARGS} "sudo /bin/bash -c '
 $INSTALL_KUBERNETES
 $KUBEADM_TOKEN_COMMAND
 '" &

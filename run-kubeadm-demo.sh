@@ -93,9 +93,7 @@ p  "*** Helm"
 
 p  ""
 p  "# Install Helm"
-pe 'curl -s $(curl -s https://github.com/kubernetes/helm | awk -F \" "/linux-amd64/ { print \$2 }") | tar xvzf - -C /tmp/ linux-amd64/helm'
-pe 'sudo mv /tmp/linux-amd64/helm /usr/local/bin/'
-p  "# (Bug: https://github.com/kubernetes/helm/issues/2657)"
+pe 'curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash'
 pe 'kubectl create serviceaccount tiller --namespace kube-system'
 pe 'kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller'
 pe 'helm init --service-account tiller'
@@ -133,55 +131,131 @@ p  "*** rook"
 
 
 pe 'helm repo add rook-master https://charts.rook.io/master'
-pe 'helm install rook-master/rook --wait --namespace rook-system --name my-rook --version $(helm search rook | awk "/^rook/ { print \$2 }")'
+pe 'helm install rook-master/rook-ceph --wait --namespace rook-ceph-system --name my-rook --version $(helm search rook-ceph | awk "/^rook-master/ { print \$2 }")'
 p  '# Create your Rook cluster'
-pe 'kubectl create -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/rook-cluster.yaml'
+pe 'kubectl create -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/cluster.yaml'
 p  '# Running the Toolbox with ceph commands'
-pe 'kubectl create -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/rook-tools.yaml'
+pe 'kubectl create -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/toolbox.yaml'
 p  '# Create a storage class based on the Ceph RBD volume plugin'
-pe 'kubectl create -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/rook-storageclass.yaml'
+pe 'kubectl create -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/storageclass.yaml'
 p  '# Create a shared file system which can be mounted read-write from multiple pods'
-pe 'kubectl create -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/rook-filesystem.yaml'
+pe 'kubectl create -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/filesystem.yaml'
 pe 'sleep 150'
 
 p  '# Check the status of your Ceph installation'
-pe 'kubectl -n rook exec rook-tools -- ceph status'
-pe 'kubectl -n rook exec rook-tools -- ceph osd status'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph status'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd status'
 
 p  '# Check health detail of Ceph cluster'
-pe 'kubectl -n rook exec rook-tools -- ceph health detail'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph health detail'
 
 p  '# Check monitor quorum status of Ceph'
-pe 'kubectl -n rook exec rook-tools -- ceph quorum_status --format json-pretty'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph quorum_status --format json-pretty'
 
 p  '# Dump monitoring information from Ceph'
-pe 'kubectl -n rook exec rook-tools -- ceph mon dump'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph mon dump'
 
 p  '# Check the cluster usage status'
-pe 'kubectl -n rook exec rook-tools -- ceph df'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph df'
 
 p  '# Check OSD usage of Ceph'
-pe 'kubectl -n rook exec rook-tools -- ceph osd df'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd df'
 
 p  '# Check the Ceph monitor, OSD, pool, and placement group stats'
-pe 'kubectl -n rook exec rook-tools -- ceph mon stat'
-pe 'kubectl -n rook exec rook-tools -- ceph osd stat'
-pe 'kubectl -n rook exec rook-tools -- ceph osd pool stats'
-pe 'kubectl -n rook exec rook-tools -- ceph pg stat'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph mon stat'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd stat'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd pool stats'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph pg stat'
 
 p  '# List the placement group'
-pe 'kubectl -n rook exec rook-tools -- ceph pg dump'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph pg dump'
 
 p  '# List the Ceph pools in detail'
-pe 'kubectl -n rook exec rook-tools -- ceph osd pool ls detail'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd pool ls detail'
 
 p  'Check the CRUSH map view of OSDs'
-pe 'kubectl -n rook exec rook-tools -- ceph osd tree'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd tree'
 
 p  '# List the cluster authentication keys'
-pe 'kubectl -n rook exec rook-tools -- ceph auth list'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph auth list'
 
-# ceph osd utilization
+p  '# Change the size of Ceph replica for "replicapool" pool'
+pe 'kubectl get pool --namespace=rook-ceph replicapool -o yaml | sed "s/size: 1/size: 3/" | kubectl replace -f -'
+
+p  ""
+p  "################################################################################################### Press <ENTER> to continue"
+wait
+
+p  ""
+p  '# List details for "replicapool"'
+pe 'kubectl describe pool --namespace=rook-ceph replicapool'
+
+cat > files/rook-ceph-test-job.yaml << EOF
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rook-ceph-test-pv-claim
+spec:
+  storageClassName: rook-ceph-block
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rook-ceph-test
+  labels:
+    app: rook-ceph-test
+spec:
+  template:
+    metadata:
+      labels:
+        app: rook-ceph-test
+    spec:
+      containers:
+      - name: rook-ceph-test
+        image: busybox
+        command: [ 'dd', 'if=/dev/zero', 'of=/data/zero_file', 'bs=1M', 'count=100' ]
+        volumeMounts:
+          - name: rook-ceph-test
+            mountPath: "/data"
+      restartPolicy: Never
+      volumes:
+      - name: rook-ceph-test
+        persistentVolumeClaim:
+          claimName: rook-ceph-test-pv-claim
+EOF
+
+p  ""
+p  "# See the manifest of the pod which should use rook/ceph"
+pe 'cat files/rook-ceph-test-job.yaml'
+
+p  '# Check the ceph usage'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd status'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph df'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd df'
+
+p  ""
+p  "# Apply the manifest"
+pe 'kubectl apply -f files/rook-ceph-test-job.yaml'
+pe 'sleep 10'
+
+p  '# Check the ceph usage'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd status'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph df'
+pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd df'
+
+p  ""
+p  "# List the Persistent Volume Claims"
+pe 'kubectl get pvc'
+
+p  ""
+p  "# Delete the job"
+pe 'kubectl delete job rook-ceph-test'
+
 
 p  ""
 p  "################################################################################################### Press <ENTER> to continue"
@@ -214,7 +288,7 @@ prometheus.storageSpec.volumeClaimTemplate.spec.accessModes[0]=ReadWriteOnce,\
 prometheus.storageSpec.volumeClaimTemplate.spec.resources.requests.storage=20Gi,\
 '
 
-pe 'GRAFANA_PASSWORD=$(kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{.data.password}" | base64 --decode ; echo)'
+pe 'GRAFANA_PASSWORD=$(kubectl get secret --namespace monitoring my-kube-prometheus-grafana -o jsonpath="{.data.password}" | base64 --decode ; echo)'
 pe 'echo "Grafana login: admin / $GRAFANA_PASSWORD"'
 
 
@@ -392,7 +466,7 @@ pe 'cat files/kuard-pod-health.yaml'
 p  ""
 p  "# Create a Pod using this manifest and then port-forward to that pod"
 pe 'kubectl apply -f files/kuard-pod-health.yaml'
-pe 'sleep 20'
+pe 'sleep 30'
 
 p  ""
 p  "# Point your browser to http://127.0.0.1:8080 then click 'Liveness Probe' tab and then 'fail' link - it will cause to fail health checks"
@@ -1342,7 +1416,7 @@ pe 'kubectl describe deployment nginx-deployment'
 p  ""
 p  "# Halt one of the nodes (node2)"
 pe 'vagrant halt node2'
-pe 'sleep 20'
+pe 'sleep 30'
 
 p  ""
 p  "################################################################################################### Press <ENTER> to continue"
@@ -1356,6 +1430,7 @@ p  ""
 p  "# Get pod details - everything looks fine - you need to wait 5 minutes"
 pe 'kubectl get pods -o wide'
 
+p  ""
 p  "# Pod will not be evicted until it is 5 minutes old -  (see Tolerations in 'describe pod' )"
 p  "# It prevents Kubernetes to spin up the new containers when it is not necessary"
 pe 'NGINX_POD=$(kubectl get pods -l app=nginx --output=jsonpath="{.items[0].metadata.name}")'
@@ -1366,7 +1441,7 @@ p  "# Sleeping for 5 minutes"
 pe 'sleep 300'
 
 p  ""
-p  "# Get pods details - Status=Unknown and new container was started"
+p  "# Get pods details - Status=Unknown/NodeLost and new container was started"
 pe 'kubectl get pods -o wide'
 
 p  ""
@@ -1403,7 +1478,7 @@ pe 'ssh $SSH_ARGS vagrant@node1 "sudo sh -xc \" apt-get update -qq; DEBIAN_FRONT
 
 p  ""
 p  "# Install NFS client to other nodes"
-pe 'for COUNT in {2..4}; do ssh $SSH_ARGS vagrant@node${COUNT} "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nfs-common > /dev/null"; done'
+pe 'for COUNT in {2..4}; do ssh $SSH_ARGS vagrant@node${COUNT} "sudo sh -xc \"apt-get update -qq; DEBIAN_FRONTEND=noninteractive apt-get install -y nfs-common > /dev/null\""; done'
 
 cat > files/nfs-volume.yaml << EOF
 apiVersion: v1
@@ -1537,7 +1612,7 @@ pe 'kubectl drain --delete-local-data --ignore-daemonsets node3'
 
 p  ""
 p  "# Get pod details"
-pe 'kubectl get pods -o wide'
+pe 'kubectl get pods -o wide --all-namespaces | grep node3'
 
 p  ""
 p  "# Destroy the node node3"
@@ -1545,7 +1620,7 @@ pe 'vagrant destroy -f node3'
 
 p  ""
 p  "# Wait some time for Kubernetes to catch up..."
-pe 'sleep 30'
+pe 'sleep 40'
 
 p  ""
 p  "################################################################################################### Press <ENTER> to continue"
@@ -1553,7 +1628,7 @@ wait
 
 p  ""
 p  "# The node3 shoult be in 'NotReady' state"
-pe 'kubectl get nodes'
+pe 'kubectl get pods -o wide --all-namespaces'
 
 p  ""
 p  "# Remove the node3 from the cluster"
@@ -1569,7 +1644,7 @@ pe 'vagrant up node3'
 
 p  ""
 p  "# Install Kubernetes repository to new node"
-pe 'ssh $SSH_ARGS vagrant@node3 "sudo sh -xc \" DEBIAN_FRONTEND=noninteractive apt-get install -y apt-transport-https curl > /dev/null; curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -; echo deb https://apt.kubernetes.io/ kubernetes-xenial main > /etc/apt/sources.list.d/kubernetes.list \""'
+pe 'ssh $SSH_ARGS vagrant@node3 "sudo sh -xc \" apt-get update -qq; DEBIAN_FRONTEND=noninteractive apt-get install -y apt-transport-https curl > /dev/null; curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -; echo deb https://apt.kubernetes.io/ kubernetes-xenial main > /etc/apt/sources.list.d/kubernetes.list \""'
 
 p  ""
 p  "# Install Kubernetes packages"

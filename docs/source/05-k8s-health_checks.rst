@@ -64,7 +64,7 @@ Create a Pod using this manifest and then port-forward to that pod
 .. code-block:: shell-session
 
    $ kubectl apply -f files/kuard-pod-health.yaml
-   $ sleep 20
+   $ sleep 30
 
 Point your browser to http://127.0.0.1:8080 then click 'Liveness Probe' tab and then 'fail' link - it will cause to fail health checks
 
