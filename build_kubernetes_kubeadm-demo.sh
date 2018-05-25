@@ -17,8 +17,8 @@ test -f ./demo-magic.sh || curl --silent https://raw.githubusercontent.com/paxto
 #
 TYPE_SPEED=40
 
-# Uncomment to run non-interactively
-export PROMPT_TIMEOUT=1
+# Set positive values to run interactively
+export PROMPT_TIMEOUT=0
 
 # No wait after "p" or "pe"
 export NO_WAIT=true
@@ -74,10 +74,6 @@ $NODE3_IP node3 node3.cluster.local
 EOF2'
 \"
 done"
-
-p  ""
-p  "# Put the Kubernetes install routine into variable"
-wait
 
 INSTALL_KUBERNETES="
 export DEBIAN_FRONTEND='noninteractive'

@@ -3,23 +3,26 @@
 VAGRANT_DEFAULT_PROVIDER=libvirt vagrant up
 
 test -d kubespray && rm -rf kubespray
+echo "# Clone kubespray repo"
 git clone https://github.com/kubernetes-incubator/kubespray.git
 cd kubespray
 git checkout tags/v2.5.0
 
-# Copy ``inventory/sample`` as ``inventory/mycluster``
-cp -rfp inventory/sample inventory/mycluster
-
+echo "# Set IPs form VMs and store them into variables"
 NODE1_IP=`getent hosts node1 | cut -d' ' -f1`
 NODE2_IP=`getent hosts node2 | cut -d' ' -f1`
 NODE3_IP=`getent hosts node3 | cut -d' ' -f1`
 
-declare -a IPS=($NODE1_IP $NODE2_IP $NODE3_IP)
-CONFIG_FILE=inventory/mycluster/hosts.ini python3 contrib/inventory_builder/inventory.py ${IPS[@]}
+echo "# Prepare the config directory and change the config files"
+cp -rfp inventory/sample inventory/mycluster
+
+IPS="$NODE1_IP $NODE2_IP $NODE3_IP"
+CONFIG_FILE=inventory/mycluster/hosts.ini python3 contrib/inventory_builder/inventory.py $IPS
 
 mkdir ./inventory/mycluster/credentials
 echo "kube123" > ./inventory/mycluster/credentials/kube_user.creds
 
+echo "# Configure ./inventory/mycluster/group_vars/{all.yml,k8s-cluster.yml} variables"
 # ./inventory/mycluster/group_vars/all.yml
 sed -i 's/^bootstrap_os:.*/bootstrap_os: ubuntu/' ./inventory/mycluster/group_vars/all.yml
 sed -i 's/^#kubelet_load_modules:.*/kubelet_load_modules: true/' ./inventory/mycluster/group_vars/all.yml
@@ -31,10 +34,11 @@ sed -i 's@^kube_service_addresses:.*@kube_service_addresses: 192.168.119.0/24@' 
 sed -i 's@^k8s_image_pull_policy:.*@k8s_image_pull_policy: Always@' ./inventory/mycluster/group_vars/k8s-cluster.yml
 sed -i 's@^# kubeconfig_localhost:.*@kubeconfig_localhost: true@' ./inventory/mycluster/group_vars/k8s-cluster.yml
 
-#Install Python (if needed) which is requirement for Ansible
+echo "# Start the installation"
 ansible-playbook --user vagrant --become -i inventory/mycluster/hosts.ini cluster.yml
 cd ..
 
+echo  "# Copy the kubeconfig to the local machine and get some basic details about kuberenetes cluster"
 cp kubespray/inventory/mycluster/artifacts/admin.conf kubeconfig.conf
 
 export KUBECONFIG=$PWD/kubeconfig.conf

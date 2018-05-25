@@ -96,8 +96,7 @@ p  "# Install Helm"
 pe 'curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash'
 pe 'kubectl create serviceaccount tiller --namespace kube-system'
 pe 'kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller'
-pe 'helm init --service-account tiller'
-pe 'sleep 30'
+pe 'helm init --wait --service-account tiller'
 pe 'helm repo update'
 
 
@@ -166,9 +165,6 @@ pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph mon stat'
 pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd stat'
 pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd pool stats'
 pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph pg stat'
-
-p  '# List the placement group'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph pg dump'
 
 p  '# List the Ceph pools in detail'
 pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd pool ls detail'
@@ -271,7 +267,7 @@ p  "*** prometheus (and it's dependencies)"
 p  ""
 p  "# Install prometheus"
 pe 'helm repo add coreos https://s3-eu-west-1.amazonaws.com/coreos-charts/stable/'
-pe 'helm install coreos/prometheus-operator --wait --name my-prometheus-operator --namespace monitoring'
+pe 'helm install coreos/prometheus-operator --timeout 900 --wait --name my-prometheus-operator --namespace monitoring'
 pe 'helm install coreos/kube-prometheus --name my-kube-prometheus --namespace monitoring --set \
 alertmanager.ingress.enabled=true,\
 alertmanager.ingress.hosts[0]=alertmanager.domain.com,\

@@ -20,12 +20,15 @@ apt-get install -y -qq docker.io kubelet=${KUBERNETES_VERSION}-00 kubeadm=${KUBE
 
 test -f $HOME/.ssh/id_rsa || ( install -m 0700 -d $HOME/.ssh && ssh-keygen -b 2048 -t rsa -f $HOME/.ssh/id_rsa -q -N "" )
 
+echo "# Start 3 VMs"
 VAGRANT_DEFAULT_PROVIDER=libvirt vagrant up
 
+echo "# Set IPs form VMs and store them into variables"
 NODE1_IP=`getent hosts node1 | cut -d' ' -f1`
 NODE2_IP=`getent hosts node2 | cut -d' ' -f1`
 NODE3_IP=`getent hosts node3 | cut -d' ' -f1`
 
+echo "# Fill the /etc/hosts on each cluster node"
 for COUNTER in {1..3}; do
   ssh -t ${MYUSER}@node$COUNTER ${SSH_ARGS} "sudo /bin/bash -c '
     sed -i 's/^#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.d/99-sysctl.conf
@@ -37,7 +40,7 @@ $NODE3_IP node3 node3.cluster.local
 EOF2'"
 done
 
-# Master configuration
+echo "# Install kubernetes Master"
 ssh -t ${MYUSER}@node1 ${SSH_ARGS} "sudo /bin/bash -cx '
 $INSTALL_KUBERNETES
 
@@ -52,8 +55,10 @@ export KUBECONFIG=/etc/kubernetes/admin.conf
 kubectl apply -f $CNI_URL
 '"
 
+echo "# Create bootstrap token command using: ssh ${MYUSER}@node1 \"sudo kubeadm token create --print-join-command\""
 KUBEADM_TOKEN_COMMAND=`ssh -t ${MYUSER}@node1 ${SSH_ARGS} "sudo kubeadm token create --print-join-command"`
 
+echo "# Install Kubernetes packages to all nodes and join the nodes to the master using bootstrap token"
 for COUNTER in {2..3}; do
   echo "*** node$COUNTER"
   nohup ssh -t ${MYUSER}@node$COUNTER ${SSH_ARGS} "sudo /bin/bash -c '
@@ -62,6 +67,7 @@ $KUBEADM_TOKEN_COMMAND
 '" &
 done
 
+echo "# Copy the kubeconfig to the local machine and get some basic details about kuberenetes cluster"
 scp ${MYUSER}@node1:~/.kube/config kubeconfig.conf
 
 export KUBECONFIG=$PWD/kubeconfig.conf

@@ -8,8 +8,7 @@ Helm installation: https://github.com/kubernetes/helm/blob/master/docs/rbac.md
    $ curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
    $ kubectl create serviceaccount tiller --namespace kube-system
    $ kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-   $ helm init --service-account tiller
-   $ sleep 30
+   $ helm init --wait --service-account tiller
    $ helm repo update
 
 Install `nginx-ingress <https://github.com/kubernetes/ingress-nginx>`_ - NGINX Ingress Controller
@@ -97,12 +96,6 @@ Check the Ceph monitor, OSD, pool, and placement group stats
    $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd pool stats
    $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph pg stat
 
-List the placement group
-
-.. code-block:: shell-session
-
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph pg dump
-
 List the Ceph pools in detail
 
 .. code-block:: shell-session
@@ -189,6 +182,7 @@ Apply the manifest
 .. code-block:: shell-session
 
    $ kubectl apply -f files/rook-ceph-test-job.yaml
+   $ sleep 10
 
 Check the ceph usage again
 
@@ -216,7 +210,7 @@ Install `Prometheus <https://github.com/coreos/prometheus-operator>`_ - Promethe
 .. code-block:: shell-session
 
    $ helm repo add coreos https://s3-eu-west-1.amazonaws.com/coreos-charts/stable/
-   $ helm install coreos/prometheus-operator --wait --name my-prometheus-operator --namespace monitoring
+   $ helm install coreos/prometheus-operator --timeout 900 --wait --name my-prometheus-operator --namespace monitoring
    $ helm install coreos/kube-prometheus --name my-kube-prometheus --namespace monitoring --set alertmanager.ingress.enabled=true,alertmanager.ingress.hosts[0]=alertmanager.domain.com,alertmanager.storageSpec.volumeClaimTemplate.spec.storageClassName=rook-block,alertmanager.storageSpec.volumeClaimTemplate.spec.accessModes[0]=ReadWriteOnce,alertmanager.storageSpec.volumeClaimTemplate.spec.resources.requests.storage=20Gi,grafana.adminPassword=admin123,grafana.ingress.enabled=true,grafana.ingress.hosts[0]=grafana.domain.com,prometheus.ingress.enabled=true,prometheus.ingress.hosts[0]=prometheus.domain.com,prometheus.storageSpec.volumeClaimTemplate.spec.storageClassName=rook-block,prometheus.storageSpec.volumeClaimTemplate.spec.accessModes[0]=ReadWriteOnce,prometheus.storageSpec.volumeClaimTemplate.spec.resources.requests.storage=20Gi
    $ GRAFANA_PASSWORD=$(kubectl get secret --namespace monitoring my-kube-prometheus-grafana -o jsonpath="{.data.password}" | base64 --decode ; echo)
    $ echo "Grafana login: admin / $GRAFANA_PASSWORD"
