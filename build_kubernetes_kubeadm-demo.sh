@@ -43,7 +43,7 @@ p  "# Setup the initial variables"
 pe 'export MYUSER="vagrant"'
 pe 'SSH_ARGS="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"'
 pe 'POD_NETWORK_CIDR="10.244.0.0/16"'
-pe 'KUBERNETES_VERSION="1.10.0"'
+pe 'KUBERNETES_VERSION="1.10.3"'
 pe 'CNI_URL="https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"'
 
 p  ""

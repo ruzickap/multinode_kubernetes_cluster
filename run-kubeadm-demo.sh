@@ -36,7 +36,7 @@ test -f $PWD/kubeconfig.conf || echo "*** Can not find Kubernetes config file: $
 SSH_ARGS=" -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no "
 
 # The Kubernetes version
-KUBERNETES_VERSION="1.10.0"
+KUBERNETES_VERSION="1.10.3"
 
 test -d files || mkdir files
 
@@ -267,7 +267,7 @@ p  "*** prometheus (and it's dependencies)"
 p  ""
 p  "# Install prometheus"
 pe 'helm repo add coreos https://s3-eu-west-1.amazonaws.com/coreos-charts/stable/'
-pe 'helm install coreos/prometheus-operator --timeout 900 --wait --name my-prometheus-operator --namespace monitoring'
+pe 'helm install coreos/prometheus-operator --wait --name my-prometheus-operator --namespace monitoring'
 pe 'helm install coreos/kube-prometheus --name my-kube-prometheus --namespace monitoring --set \
 alertmanager.ingress.enabled=true,\
 alertmanager.ingress.hosts[0]=alertmanager.domain.com,\

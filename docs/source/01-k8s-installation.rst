@@ -28,7 +28,7 @@ Set the Kubernetes version which will be installed:
 
 .. code-block:: shell-session
 
-   $ KUBERNETES_VERSION="1.10.0"
+   $ KUBERNETES_VERSION="1.10.3"
 
 Set the proper `CNI <https://kubernetes.io/docs/concepts/cluster-administration/network-plugins/#cni>`_ URL:
 
@@ -102,7 +102,7 @@ Set the Kubernetes version which will be installed:
 
 .. code-block:: shell-session
 
-   $ KUBERNETES_VERSION="1.10.0"
+   $ KUBERNETES_VERSION="1.10.3"
 
 Add the Kubernetes repository (`details <https://kubernetes.io/docs/setup/independent/install-kubeadm/>`_):
 

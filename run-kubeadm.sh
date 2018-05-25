@@ -3,7 +3,7 @@
 MYUSER="vagrant"
 SSH_ARGS="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 POD_NETWORK_CIDR="10.244.0.0/16"
-KUBERNETES_VERSION="1.10.0"
+KUBERNETES_VERSION="1.10.3"
 CNI_URL="https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"
 
 INSTALL_KUBERNETES="
