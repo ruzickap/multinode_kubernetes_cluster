@@ -68,7 +68,7 @@ $KUBEADM_TOKEN_COMMAND
 done
 
 echo "# Copy the kubeconfig to the local machine and get some basic details about kuberenetes cluster"
-scp ${MYUSER}@node1:~/.kube/config kubeconfig.conf
+scp ${SSH_ARGS} ${MYUSER}@node1:~/.kube/config kubeconfig.conf
 
 export KUBECONFIG=$PWD/kubeconfig.conf
 kubectl get nodes

@@ -122,7 +122,7 @@ done"
 p  ""
 p  "# Copy the kubeconfig to the local machine and get some basic details about kuberenetes cluster"
 wait
-pe "scp ${MYUSER}@node1:~/.kube/config kubeconfig.conf"
+pe "scp $SSH_ARGS ${MYUSER}@node1:~/.kube/config kubeconfig.conf"
 pe "export KUBECONFIG=$PWD/kubeconfig.conf"
 pe "kubectl get nodes"
 pe "kubectl describe node node1"

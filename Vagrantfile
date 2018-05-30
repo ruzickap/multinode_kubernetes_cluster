@@ -16,6 +16,7 @@ Vagrant.configure(2) do |config|
     domain.cpus = 1
     domain.memory = 3072
     domain.driver = "kvm"
+    #domain.management_network_address = "192.168.100.0/24"
   end
 
   (1..node_count).each do |i|

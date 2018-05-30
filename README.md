@@ -8,6 +8,8 @@ By running the scripts you got access to 4 node cluster running on VMs.
 * [run-kubeadm.sh](run-kubeadm.sh) - is using standard "kubernetes tool" [kubeadm](https://github.com/kubernetes/kubeadm) for [creating the cluster](https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/)
 * [run-kubespray.sh](run-kubespray.sh) - script is using [Kubespray](https://github.com/kubernetes-incubator/kubespray) to build enterprise ready cluster
 * [run-kubeadm-demo.sh](run-kubeadm-demo.sh) - script showing Kubernetes basics using [demo-magic](https://github.com/paxtonhare/demo-magic) script
+* [build_kubernetes_kubeadm-demo.sh](build_kubernetes_kubeadm-demo.sh) - demo script showing Kubernetes installation using [kubeadm](https://github.com/kubernetes/kubeadm) on Ubuntu 18.04
+* [build_kubernetes_kubespray-demo.sh](build_kubernetes_kubespray-demo.sh) - demo script showing Kubernetes installation using [kubespray](https://github.com/kubernetes-incubator/kubespray) on Ubuntu 18.04
 
 
 ## Requirements
@@ -25,6 +27,21 @@ Packages (+dependencies):
 * [vagrant-libvirt](https://github.com/vagrant-libvirt/vagrant-libvirt)
 * [vagrant-hostmanager](https://github.com/devopsgroup-io/vagrant-hostmanager)
 
+### Requirements installation
+
+* Ubuntu 18.04
+
+```
+sudo apt install -y --no-install-recommends ansible curl dnsmasq ebtables git gcc jq libc-dev libvirt-bin libvirt-dev pkg-config pv qemu-kvm qemu-utils
+VAGRANT_LATEST_VERSION=$(curl -s https://checkpoint-api.hashicorp.com/v1/check/vagrant | jq -r -M '.current_version')
+curl https://releases.hashicorp.com/vagrant/${VAGRANT_LATEST_VERSION}/vagrant_${VAGRANT_LATEST_VERSION}_x86_64.deb --output /tmp/vagrant_x86_64.deb
+sudo apt install -y /tmp/vagrant_x86_64.deb
+rm /tmp/vagrant_x86_64.deb
+vagrant plugin install vagrant-libvirt vagrant-hostmanager
+sudo curl -L https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl --output /usr/local/bin/kubectl && sudo chmod a+x /usr/local/bin/kubectl
+test -f $HOME/.ssh/id_rsa || ( install -m 0700 -d $HOME/.ssh && ssh-keygen -b 2048 -t rsa -f $HOME/.ssh/id_rsa -q -N '' )
+sudo reboot
+```
 
 ## Login Credentials
 
@@ -61,10 +78,19 @@ kubectl cluster-info
 ```
 
 
+## Demo asciinema examples
+
+* `build_kubernetes_kubeadm-demo.sh`
+[![asciicast](https://asciinema.org/a/184410.png)](https://asciinema.org/a/184410)
+
+* `build_kubernetes_kubespray-demo.sh`
+[![asciicast](https://asciinema.org/a/184411.png)](https://asciinema.org/a/184411)
+
+
 ## Documentation with CI
 
-You can find the documentation here: http://multinode-kubernetes-cluster.readthedocs.io/en/latest/
-Appveyor CI checking the commands in docs: https://ci.appveyor.com/project/ruzickap/multinode-kubernetes-cluster
+* You can find the documentation here: http://multinode-kubernetes-cluster.readthedocs.io/en/latest/
+* Appveyor CI checking the commands in docs: https://ci.appveyor.com/project/ruzickap/multinode-kubernetes-cluster
 
 
 ## License

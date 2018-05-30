@@ -18,6 +18,13 @@ Install `nginx-ingress <https://github.com/kubernetes/ingress-nginx>`_ - NGINX I
    $ helm install stable/nginx-ingress --wait --name my-nginx --set controller.daemonset.useHostPort=true,controller.kind=DaemonSet,controller.metrics.enabled=true,controller.service.type=NodePort,controller.stats.enabled=true,rbac.create=true
    $ kubectl get pods --all-namespaces -l app=nginx-ingress -o wide
 
+Install `Traefik <https://github.com/containous/traefik>`_ - Træfik is a modern HTTP reverse proxy and load balancer
+
+.. code-block:: shell-session
+
+   $ helm install stable/traefik --wait --name my-traefik --namespace kube-system --set serviceType=NodePort,dashboard.enabled=true,accessLogs.enabled=true,rbac.enabled=true,metrics.prometheus.enabled=true
+   $ kubectl describe svc my-traefik --namespace kube-system
+
 Install `rook <https://github.com/rook/rook>`_ - File, Block, and Object Storage Services for your Cloud-Native Environment
 
 .. code-block:: shell-session

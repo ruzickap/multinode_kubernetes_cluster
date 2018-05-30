@@ -100,23 +100,40 @@ pe 'helm init --wait --service-account tiller'
 pe 'helm repo update'
 
 
+# p  ""
+# ################################################
+# p  "*** nginx-ingress"
+# ################################################
+#
+#
+# p  ""
+# p  "# Install nginx-ingress"
+# pe 'helm install stable/nginx-ingress --wait --name my-nginx --set \
+# controller.daemonset.useHostPort=true,\
+# controller.kind=DaemonSet,\
+# controller.metrics.enabled=true,\
+# controller.service.type=NodePort,\
+# controller.stats.enabled=true,\
+# rbac.create=true,\
+# '
+# pe 'kubectl get pods --all-namespaces -l app=nginx-ingress -o wide'
+
 p  ""
 ################################################
-p  "*** nginx-ingress"
+p  "*** traefik"
 ################################################
 
 
 p  ""
-p  "# Install nginx-ingress"
-pe 'helm install stable/nginx-ingress --wait --name my-nginx --set \
-controller.daemonset.useHostPort=true,\
-controller.kind=DaemonSet,\
-controller.metrics.enabled=true,\
-controller.service.type=NodePort,\
-controller.stats.enabled=true,\
-rbac.create=true,\
+p  "# Install traefik"
+pe 'helm install stable/traefik --wait --name my-traefik --namespace kube-system --set \
+serviceType=NodePort,\
+dashboard.enabled=true,\
+accessLogs.enabled=true,\
+rbac.enabled=true,\
+metrics.prometheus.enabled=true\
 '
-pe 'kubectl get pods --all-namespaces -l app=nginx-ingress -o wide'
+pe 'kubectl describe svc my-traefik --namespace kube-system'
 
 p  ""
 p  "################################################################################################### Press <ENTER> to continue"
