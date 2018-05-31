@@ -115,6 +115,7 @@ for COUNTER in {2..3}; do
   echo '*** node\$COUNTER'
   nohup ssh -t ${MYUSER}@node\$COUNTER $SSH_ARGS \"sudo /bin/bash -cx '
 $INSTALL_KUBERNETES
+hostname
 $KUBEADM_TOKEN_COMMAND
 '\" &
 done"

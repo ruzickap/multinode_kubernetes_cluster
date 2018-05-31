@@ -14,7 +14,7 @@ cat > /etc/apt/sources.list.d/kubernetes.list << EOF2
 deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF2
 apt-get update -qq
-apt-get install -y -qq docker.io kubelet=${KUBERNETES_VERSION}-00 kubeadm=${KUBERNETES_VERSION}-00 kubectl=${KUBERNETES_VERSION}-00
+apt-get install -y -qq --no-install-recommends docker.io kubelet=${KUBERNETES_VERSION}-00 kubeadm=${KUBERNETES_VERSION}-00 kubectl=${KUBERNETES_VERSION}-00
 "
 
 
@@ -61,8 +61,9 @@ KUBEADM_TOKEN_COMMAND=`ssh -t ${MYUSER}@node1 ${SSH_ARGS} "sudo kubeadm token cr
 echo "# Install Kubernetes packages to all nodes and join the nodes to the master using bootstrap token"
 for COUNTER in {2..3}; do
   echo "*** node$COUNTER"
-  nohup ssh -t ${MYUSER}@node$COUNTER ${SSH_ARGS} "sudo /bin/bash -c '
-$INSTALL_KUBERNETES
+  nohup ssh -t ${MYUSER}@node$COUNTER ${SSH_ARGS} "sudo /bin/bash -cx '
+$INSTALL_KUBERNETES > /dev/null
+hostname
 $KUBEADM_TOKEN_COMMAND
 '" &
 done
