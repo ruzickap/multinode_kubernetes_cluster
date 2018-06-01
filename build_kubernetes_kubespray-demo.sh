@@ -18,7 +18,7 @@ test -f ./demo-magic.sh || curl --silent https://raw.githubusercontent.com/paxto
 TYPE_SPEED=40
 
 # Set positive values to run interactively
-export PROMPT_TIMEOUT=0
+export PROMPT_TIMEOUT=1
 
 # No wait after "p" or "pe"
 export NO_WAIT=true
@@ -94,7 +94,31 @@ pe "export KUBECONFIG=$PWD/kubeconfig.conf"
 pe "kubectl get nodes"
 pe "kubectl get all --all-namespaces"
 
+cat > /tmp/dashboard-admin.yaml << EOF
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: kubernetes-dashboard
+  labels:
+    k8s-app: kubernetes-dashboard
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: kubernetes-dashboard
+  namespace: kube-system
+EOF
+
 p  ""
 p  "# *** Start with:"
 p  "# export KUBECONFIG=\$PWD/kubeconfig.conf"
 p  "# kubectl get nodes"
+p  "# kubectl get pods --all-namespaces"
+p  "# kubectl create -f /tmp/dashboard-admin.yaml"
+p  "# https://node1:6443/ui"
+p  "# cd kubespray"
+p  "# sed -i 's/^efk_enabled:.*/efk_enabled: true/' ./inventory/mycluster/group_vars/k8s-cluster.yml"
+p  "# ansible-playbook --user vagrant --become -i inventory/mycluster/hosts.ini cluster.yml"
+p  "# kubectl cluster-info"
