@@ -1166,7 +1166,7 @@ pe 'cat files/kuard-config.yaml'
 p  ""
 p  "# Apply the config file"
 pe 'kubectl apply -f files/kuard-config.yaml'
-pe 'sleep 10'
+pe 'sleep 20'
 
 p  ""
 p  "# {EXTRA_PARAM,ANOTHER_PARAM} variable has value from configmap my-config/{extra-param,another-param} and file /config/my-config.txt exists in container"

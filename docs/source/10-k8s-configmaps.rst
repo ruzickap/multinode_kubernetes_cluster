@@ -81,7 +81,7 @@ Apply the config file
 .. code-block:: shell-session
 
    $ kubectl apply -f files/kuard-config.yaml
-   $ sleep 10
+   $ sleep 20
 
 {EXTRA_PARAM,ANOTHER_PARAM} variable has value from configmap my-config/{extra-param,another-param} and file /config/my-config.txt exists in container
 
