@@ -24,3 +24,7 @@ build_script:
 
   # Run commands form specific rst files
   - for RST_FILE in docs/source/{02..07}*.rst docs/source/{09..13}*.rst; do sed -n "s/^   \$\{0,1\}\(.*\)/\1/p" $RST_FILE; done | bash -ex
+
+  # Check the generated yaml files
+  - curl -sL https://github.com/garethr/kubeval/releases/download/$(curl -s https://api.github.com/repos/garethr/kubeval/releases/latest | jq -r '.tag_name')/kubeval-linux-amd64.tar.gz | sudo tar xvzf - -C /usr/local/bin/ kubeval
+  - kubeval files/*.yaml

@@ -621,6 +621,10 @@ metadata:
   name: kuard
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: kuard
+      version: "2"  
   template:
     metadata:
       labels:
@@ -954,6 +958,11 @@ metadata:
   name: queue
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: work-queue
+      component: queue
+      chapter: jobs
   template:
     metadata:
       labels:

@@ -223,6 +223,11 @@ Create a simple ReplicaSet to manage a singleton work queue daemon
      name: queue
    spec:
      replicas: 1
+     selector:
+       matchLabels:
+         app: work-queue
+         component: queue
+         chapter: jobs
      template:
        metadata:
          labels:

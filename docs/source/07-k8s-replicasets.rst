@@ -12,6 +12,10 @@ Show minimal ReplicaSet definition
      name: kuard
    spec:
      replicas: 1
+     selector:
+       matchLabels:
+         app: kuard
+         version: "2"
      template:
        metadata:
          labels:
