@@ -87,6 +87,14 @@ kubectl cluster-info
 [![asciicast](https://asciinema.org/a/184411.png)](https://asciinema.org/a/184411)
 
 
+## Diagrams
+* `build_kubernetes_kubeadm-demo.sh`
+![kubeadm_diagram](images/kubeadm_diagram.png)
+
+* `build_kubernetes_kubespray-demo.sh`
+![kubespray_diagram](images/kubespray_diagram.png)
+
+
 ## Documentation with CI
 
 * You can find the documentation here: http://multinode-kubernetes-cluster.readthedocs.io/en/latest/
