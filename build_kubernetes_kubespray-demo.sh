@@ -18,7 +18,7 @@ test -f ./demo-magic.sh || curl --silent https://raw.githubusercontent.com/paxto
 TYPE_SPEED=40
 
 # Set positive values to run interactively
-export PROMPT_TIMEOUT=1
+export PROMPT_TIMEOUT=0
 
 # No wait after "p" or "pe"
 export NO_WAIT=true
@@ -46,7 +46,7 @@ pe "cat Vagrantfile"
 pe 'VAGRANT_DEFAULT_PROVIDER=libvirt vagrant up'
 
 p  ""
-p  "# Set IPs form VMs and store them into variables"
+p  "# Set IPs form VMs and store them into variables to store them in /etc/hosts later"
 wait
 
 p  ""
@@ -115,10 +115,6 @@ p  ""
 p  "# *** Start with:"
 p  "# export KUBECONFIG=\$PWD/kubeconfig.conf"
 p  "# kubectl get nodes"
-p  "# kubectl get pods --all-namespaces"
+p  "# kubectl get pods --all-namespaces -o wide"
 p  "# kubectl create -f /tmp/dashboard-admin.yaml"
 p  "# https://node1:6443/ui"
-p  "# cd kubespray"
-p  "# sed -i 's/^efk_enabled:.*/efk_enabled: true/' ./inventory/mycluster/group_vars/k8s-cluster.yml"
-p  "# ansible-playbook --user vagrant --become -i inventory/mycluster/hosts.ini cluster.yml"
-p  "# kubectl cluster-info"

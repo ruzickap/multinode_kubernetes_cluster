@@ -8,7 +8,7 @@ git clone https://github.com/kubernetes-incubator/kubespray.git
 cd kubespray
 git checkout tags/v2.5.0
 
-echo "# Set IPs form VMs and store them into variables"
+echo "# Set IPs form VMs and store them into variables to store them in /etc/hosts later"
 NODE1_IP=`getent hosts node1 | cut -d' ' -f1`
 NODE2_IP=`getent hosts node2 | cut -d' ' -f1`
 NODE3_IP=`getent hosts node3 | cut -d' ' -f1`

@@ -52,7 +52,7 @@ pe "cat Vagrantfile"
 pe 'VAGRANT_DEFAULT_PROVIDER=libvirt vagrant up'
 
 p  ""
-p  "# Set IPs form VMs and store them into variables"
+p  "# Set IPs form VMs and store them into variables to store them in /etc/hosts later"
 wait
 
 p  ""
