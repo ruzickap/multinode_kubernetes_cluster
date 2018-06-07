@@ -43,6 +43,15 @@ test -f $HOME/.ssh/id_rsa || ( install -m 0700 -d $HOME/.ssh && ssh-keygen -b 20
 sudo reboot
 ```
 
+* Fedora 28
+
+```
+sudo dnf install -y ansible git kubernetes-client libvirt vagrant-libvirt vagrant-hostmanager
+test -f $HOME/.ssh/id_rsa || ( install -m 0700 -d $HOME/.ssh && ssh-keygen -b 2048 -t rsa -f $HOME/.ssh/id_rsa -q -N '' )
+service libvirtd restart
+```
+
+
 ## Login Credentials
 
 * Username: root / vagrant
@@ -88,6 +97,7 @@ kubectl cluster-info
 
 
 ## Diagrams
+
 * `build_kubernetes_kubeadm-demo.sh`
 ![kubeadm_diagram](images/kubeadm_diagram.png)
 
