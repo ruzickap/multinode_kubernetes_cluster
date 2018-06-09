@@ -13,7 +13,7 @@ test -f ./demo-magic.sh || curl --silent https://raw.githubusercontent.com/paxto
 #
 # speed at which to simulate typing. bigger num = faster
 #
-# TYPE_SPEED=20
+TYPE_SPEED=40
 
 # Uncomment to run non-interactively
 export PROMPT_TIMEOUT=1
@@ -624,7 +624,7 @@ spec:
   selector:
     matchLabels:
       app: kuard
-      version: "2"  
+      version: "2"
   template:
     metadata:
       labels:
