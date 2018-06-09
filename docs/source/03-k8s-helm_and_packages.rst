@@ -11,13 +11,6 @@ Helm installation: https://github.com/kubernetes/helm/blob/master/docs/rbac.md
    $ helm init --wait --service-account tiller
    $ helm repo update
 
-Install `nginx-ingress <https://github.com/kubernetes/ingress-nginx>`_ - NGINX Ingress Controller
-
-.. code-block:: shell-session
-
-   $ helm install stable/nginx-ingress --wait --name my-nginx --set controller.daemonset.useHostPort=true,controller.kind=DaemonSet,controller.metrics.enabled=true,controller.service.type=NodePort,controller.stats.enabled=true,rbac.create=true
-   $ kubectl get pods --all-namespaces -l app=nginx-ingress -o wide
-
 Install `Traefik <https://github.com/containous/traefik>`_ - Træfik is a modern HTTP reverse proxy and load balancer
 
 .. code-block:: shell-session
