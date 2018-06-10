@@ -9,7 +9,7 @@ build_script:
   - sphinx-build -nW -b html docs/source /tmp/html
   - sphinx-build -nW -b linkcheck docs/source /tmp/linkcheck
 
-  # Download ans install minikube
+  # Download and install minikube
   # Download kubectl, which is a requirement for using minikube
   - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
   - chmod +x kubectl

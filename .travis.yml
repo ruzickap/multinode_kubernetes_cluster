@@ -1,0 +1,20 @@
+sudo: required
+
+services:
+  - docker
+
+install:
+  # Download kubectl, which is a requirement for using minikube
+  - sudo curl -L https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl
+  - sudo chmod +x /usr/local/bin/kubectl
+  # Download kubeadm-dind-cluster script
+  - curl -L https://raw.githubusercontent.com/kubernetes-sigs/kubeadm-dind-cluster/master/fixed/dind-cluster-stable.sh -o dind-cluster-stable.sh
+  - chmod +x dind-cluster-stable.sh
+  - ./dind-cluster-stable.sh up
+
+script:
+  # Run commands form specific rst files
+  - for RST_FILE in docs/source/{02..13}*.rst; do sed -n "s/^   \$\{0,1\}\(.*\)/\1/p" $RST_FILE; done | sed 's/8080/8888/' | bash -ex
+  # Check the generated yaml files
+  - curl -sL https://github.com/garethr/kubeval/releases/download/$(curl -s https://api.github.com/repos/garethr/kubeval/releases/latest | jq -r '.tag_name')/kubeval-linux-amd64.tar.gz | sudo tar xvzf - -C /usr/local/bin/ kubeval
+  - kubeval files/*.yaml
