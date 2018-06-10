@@ -14,7 +14,7 @@ install:
 
 script:
   # Run commands form specific rst files
-  - for RST_FILE in docs/source/{02..13}*.rst; do sed -n "s/^   \$\{0,1\}\(.*\)/\1/p" $RST_FILE; done | sed 's/8080/8888/' | bash -ex
+  - for RST_FILE in docs/source/{02..13}*.rst; do sed -n "s/^   \$\{0,1\}\(.*\)/\1/p" $RST_FILE; done | sed 's/8080:8080/8888:8080/;s/127.0.0.1:8080/127.0.0.1:8888/;s/node2/kube-node-1/g;s/node3/kube-node-2/g' | bash -ex
   # Check the generated yaml files
   - curl -sL https://github.com/garethr/kubeval/releases/download/$(curl -s https://api.github.com/repos/garethr/kubeval/releases/latest | jq -r '.tag_name')/kubeval-linux-amd64.tar.gz | sudo tar xvzf - -C /usr/local/bin/ kubeval
   - kubeval files/*.yaml
