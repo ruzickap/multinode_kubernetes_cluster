@@ -107,9 +107,9 @@ kubectl cluster-info
 
 ## Documentation with CI
 
-* You can find the documentation here: http://multinode-kubernetes-cluster.readthedocs.io/en/latest/
+* You can find the documentation here: https://multinode-kubernetes-cluster.readthedocs.io/en/latest/
 * Appveyor CI checking the commands in docs: https://ci.appveyor.com/project/ruzickap/multinode-kubernetes-cluster
-
+* Presentation: https://slides.com/ruzickap/kubernetes_installations/
 
 ## License
 
