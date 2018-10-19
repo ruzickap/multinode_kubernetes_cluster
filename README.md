@@ -1,5 +1,7 @@
 # Multinode Kubernetes Cluster
 
+[![Build Status](https://travis-ci.com/ruzickap/multinode_kubernetes_cluster.svg?branch=master)](https://travis-ci.com/ruzickap/multinode_kubernetes_cluster)
+
 ![Kubernetes Logo](https://upload.wikimedia.org/wikipedia/en/0/00/Kubernetes_%28container_engine%29.png)
 
 Few scripts which may help you to quickly build Multinode Kubernetes cluster.
