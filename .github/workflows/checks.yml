@@ -1,0 +1,33 @@
+name: "checks"
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  command-check:
+    name: "Command check"
+    runs-on: ubuntu-18.04
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: "Download kubectl, which is a requirement for using minikube"
+      run: |
+        sudo curl -L https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl
+        sudo chmod +x /usr/local/bin/kubectl
+
+    - name: "Download kubeadm-dind-cluster script"
+      run: |
+        curl -L https://github.com/kubernetes-sigs/kubeadm-dind-cluster/releases/download/v0.2.0/dind-cluster-v1.14.sh -o dind-cluster-stable.sh
+        chmod +x dind-cluster-stable.sh
+        ./dind-cluster-stable.sh up
+
+    - name: "Run commands form specific rst files"
+      run: |
+        for RST_FILE in docs/source/{02..13}*.rst; do sed -n "s/^   \$\{0,1\}\(.*\)/\1/p" $RST_FILE; done | sed 's/8080:8080/8888:8080/;s/127.0.0.1:8080/127.0.0.1:8888/;s/node2/kube-node-1/g;s/node3/kube-node-2/g' | bash -ex
+
+    - name: "Check the generated yaml files"
+      run: |
+        curl -sL https://github.com/garethr/kubeval/releases/download/$(curl -s https://api.github.com/repos/garethr/kubeval/releases/latest | jq -r '.tag_name')/kubeval-linux-amd64.tar.gz | sudo tar xvzf - -C /usr/local/bin/ kubeval
+        kubeval files/*.yaml

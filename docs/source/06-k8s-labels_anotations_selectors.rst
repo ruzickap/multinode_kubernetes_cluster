@@ -25,6 +25,7 @@ Create app2-prod
 .. code-block:: shell-session
 
    $ kubectl run app2-prod --image=gcr.io/kuar-demo/kuard-amd64:2 --replicas=2 --port=8080 --labels="ver=2,myapp=app2,env=prod"
+   $ sleep 5
 
 Create service
 
@@ -38,7 +39,6 @@ app2-prod [name of the service], myns [namespace that this service is in], svc [
 .. code-block:: shell-session
 
    $ kubectl run nslookup --rm -it --restart=Never --image=busybox -- nslookup app2-prod
-   $ kubectl run nslookup --rm -it --restart=Never --image=busybox -- nslookup app2-prod.myns
 
 Create app2-staging
 

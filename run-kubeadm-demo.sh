@@ -146,54 +146,56 @@ p  "*** rook"
 ################################################
 
 
-pe 'helm repo add rook-master https://charts.rook.io/master'
-pe 'helm install rook-master/rook-ceph --wait --namespace rook-ceph-system --name my-rook --version $(helm search rook-ceph | awk "/^rook-master/ { print \$2 }")'
+pe 'helm repo add rook-stable https://charts.rook.io/stable'
+pe 'helm install --wait --name rook-ceph --namespace rook-ceph-system rook-stable/rook-ceph --version v0.9.3'
+pe 'sleep 60'
 p  '# Create your Rook cluster'
-pe 'kubectl create -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/cluster.yaml'
+pe 'kubectl create -f https://raw.githubusercontent.com/rook/rook/release-0.9/cluster/examples/kubernetes/ceph/cluster.yaml'
 p  '# Running the Toolbox with ceph commands'
-pe 'kubectl create -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/toolbox.yaml'
+pe 'kubectl create -f https://raw.githubusercontent.com/rook/rook/release-0.9/cluster/examples/kubernetes/ceph/toolbox.yaml'
 p  '# Create a storage class based on the Ceph RBD volume plugin'
-pe 'kubectl create -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/storageclass.yaml'
+pe 'kubectl create -f https://raw.githubusercontent.com/rook/rook/release-0.9/cluster/examples/kubernetes/ceph/storageclass.yaml'
 p  '# Create a shared file system which can be mounted read-write from multiple pods'
-pe 'kubectl create -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/filesystem.yaml'
+pe 'kubectl create -f https://raw.githubusercontent.com/rook/rook/release-0.9/cluster/examples/kubernetes/ceph/filesystem.yaml'
 pe 'sleep 150'
 
 p  '# Check the status of your Ceph installation'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph status'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd status'
+pe 'export ROOK_CEPH_TOOLS_POD=$(kubectl -n rook-ceph get pod -l "app=rook-ceph-tools" -o jsonpath="{.items[0].metadata.name}")'
+pe 'kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph status'
+pe 'kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph osd status'
 
 p  '# Check health detail of Ceph cluster'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph health detail'
+pe 'kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph health detail'
 
 p  '# Check monitor quorum status of Ceph'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph quorum_status --format json-pretty'
+pe 'kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph quorum_status --format json-pretty'
 
 p  '# Dump monitoring information from Ceph'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph mon dump'
+pe 'kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph mon dump'
 
 p  '# Check the cluster usage status'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph df'
+pe 'kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph df'
 
 p  '# Check OSD usage of Ceph'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd df'
+pe 'kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph osd df'
 
 p  '# Check the Ceph monitor, OSD, pool, and placement group stats'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph mon stat'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd stat'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd pool stats'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph pg stat'
+pe 'kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph mon stat'
+pe 'kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph osd stat'
+pe 'kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph osd pool stats'
+pe 'kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph pg stat'
 
 p  '# List the Ceph pools in detail'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd pool ls detail'
+pe 'kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph osd pool ls detail'
 
 p  'Check the CRUSH map view of OSDs'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd tree'
+pe 'kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph osd tree'
 
 p  '# List the cluster authentication keys'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph auth list'
+pe 'kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph auth list'
 
 p  '# Change the size of Ceph replica for "replicapool" pool'
-pe 'kubectl get pool --namespace=rook-ceph replicapool -o yaml | sed "s/size: 1/size: 3/" | kubectl replace -f -'
+pe 'kubectl get cephblockpool --namespace=rook-ceph replicapool -o yaml | sed "s/size: 1/size: 3/" | kubectl replace -f -'
 
 p  ""
 p  "################################################################################################### Press <ENTER> to continue"
@@ -201,7 +203,7 @@ wait
 
 p  ""
 p  '# List details for "replicapool"'
-pe 'kubectl describe pool --namespace=rook-ceph replicapool'
+pe 'kubectl describe cephblockpool --namespace=rook-ceph replicapool'
 
 cat > files/rook-ceph-test-job.yaml << EOF
 apiVersion: v1
@@ -247,9 +249,9 @@ p  "# See the manifest of the pod which should use rook/ceph"
 pe 'cat files/rook-ceph-test-job.yaml'
 
 p  '# Check the ceph usage'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd status'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph df'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd df'
+pe 'kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph osd status'
+pe 'kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph df'
+pe 'kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph osd df'
 
 p  ""
 p  "# Apply the manifest"
@@ -257,9 +259,9 @@ pe 'kubectl apply -f files/rook-ceph-test-job.yaml'
 pe 'sleep 10'
 
 p  '# Check the ceph usage'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd status'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph df'
-pe 'kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd df'
+pe 'kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph osd status'
+pe 'kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph df'
+pe 'kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph osd df'
 
 p  ""
 p  "# List the Persistent Volume Claims"
@@ -524,6 +526,7 @@ pe 'kubectl run app1-test --image=gcr.io/kuar-demo/kuard-amd64:2 --replicas=1 --
 p  ""
 p  "# Create app2-prod"
 pe 'kubectl run app2-prod --image=gcr.io/kuar-demo/kuard-amd64:2 --replicas=2 --port=8080 --labels="ver=2,myapp=app2,env=prod"'
+pe 'sleep 5'
 
 p  ""
 p  "# Create service"
@@ -533,7 +536,6 @@ p  ""
 p  "# Check if the DNS record was properly created for the Cluster IPs"
 p  "# app2-prod [name of the service], myns [namespace that this service is in], svc [service], cluster.local. [base domain name for the cluster]"
 pe 'kubectl run nslookup --rm -it --restart=Never --image=busybox -- nslookup app2-prod'
-pe 'kubectl run nslookup --rm -it --restart=Never --image=busybox -- nslookup app2-prod.myns'
 
 p  ""
 p  "# Create app2-staging"

@@ -22,109 +22,111 @@ Install `rook <https://github.com/rook/rook>`_ - File, Block, and Object Storage
 
 .. code-block:: shell-session
 
-   $ helm repo add rook-master https://charts.rook.io/master
-   $ helm install rook-master/rook-ceph --wait --namespace rook-ceph-system --name my-rook --version $(helm search rook-ceph | awk "/^rook-master/ { print \$2 }")
+   $ helm repo add rook-stable https://charts.rook.io/stable
+   $ helm install --wait --name rook-ceph --namespace rook-ceph-system rook-stable/rook-ceph --version v0.9.3
+   $ sleep 60
 
 Create your Rook cluster
 
 .. code-block:: shell-session
 
-   $ kubectl create -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/cluster.yaml
+   $ kubectl create -f https://raw.githubusercontent.com/rook/rook/release-0.9/cluster/examples/kubernetes/ceph/cluster.yaml
 
 Running the Toolbox with ceph commands
 
 .. code-block:: shell-session
 
-   $ kubectl create -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/toolbox.yaml
+   $ kubectl create -f https://raw.githubusercontent.com/rook/rook/release-0.9/cluster/examples/kubernetes/ceph/toolbox.yaml
 
 Create a storage class based on the Ceph RBD volume plugin
 
 .. code-block:: shell-session
 
-   $ kubectl create -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/storageclass.yaml
+   $ kubectl create -f https://raw.githubusercontent.com/rook/rook/release-0.9/cluster/examples/kubernetes/ceph/storageclass.yaml
 
 Create a shared file system which can be mounted read-write from multiple pods
 
 .. code-block:: shell-session
 
-   $ kubectl create -f https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/filesystem.yaml
+   $ kubectl create -f https://raw.githubusercontent.com/rook/rook/release-0.9/cluster/examples/kubernetes/ceph/filesystem.yaml
    $ sleep 150
 
 Check the status of your Ceph installation
 
 .. code-block:: shell-session
 
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph status
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd status
+   $ export ROOK_CEPH_TOOLS_POD=$(kubectl -n rook-ceph get pod -l "app=rook-ceph-tools" -o jsonpath="{.items[0].metadata.name}")
+   $ kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph status
+   $ kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph osd status
 
 Check health detail of Ceph cluster
 
 .. code-block:: shell-session
 
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph health detail
+   $ kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph health detail
 
 Check monitor quorum status of Ceph
 
 .. code-block:: shell-session
 
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph quorum_status --format json-pretty
+   $ kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph quorum_status --format json-pretty
 
 Dump monitoring information from Ceph
 
 .. code-block:: shell-session
 
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph mon dump
+   $ kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph mon dump
 
 Check the cluster usage status
 
 .. code-block:: shell-session
 
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph df
+   $ kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph df
 
 Check OSD usage of Ceph
 
 .. code-block:: shell-session
 
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd df
+   $ kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph osd df
 
 Check the Ceph monitor, OSD, pool, and placement group stats
 
 .. code-block:: shell-session
 
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph mon stat
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd stat
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd pool stats
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph pg stat
+   $ kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph mon stat
+   $ kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph osd stat
+   $ kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph osd pool stats
+   $ kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph pg stat
 
 List the Ceph pools in detail
 
 .. code-block:: shell-session
 
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd pool ls detail
+   $ kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph osd pool ls detail
 
 Check the CRUSH map view of OSDs
 
 .. code-block:: shell-session
 
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd tree
+   $ kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph osd tree
 
 List the cluster authentication keys
 
 .. code-block:: shell-session
 
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph auth list
+   $ kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph auth list
 
 Change the size of Ceph replica for "replicapool" pool
 
 .. code-block:: shell-session
 
-   $ kubectl get pool --namespace=rook-ceph replicapool -o yaml | sed "s/size: 1/size: 3/" | kubectl replace -f -
+   $ kubectl get cephblockpool --namespace=rook-ceph replicapool -o yaml | sed "s/size: 1/size: 3/" | kubectl replace -f -
 
 List details for "replicapool"
 
 .. code-block:: shell-session
 
-   $ kubectl describe pool --namespace=rook-ceph replicapool
+   $ kubectl describe cephblockpool --namespace=rook-ceph replicapool
 
 See the manifest of the pod which should use rook/ceph
 
@@ -173,9 +175,9 @@ Check the ceph usage
 
 .. code-block:: shell-session
 
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd status
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph df
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd df
+   $ kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph osd status
+   $ kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph df
+   $ kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph osd df
 
 Apply the manifest
 
@@ -188,9 +190,9 @@ Check the ceph usage again
 
 .. code-block:: shell-session
 
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd status
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph df
-   $ kubectl -n rook-ceph exec rook-ceph-tools -- ceph osd df
+   $ kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph osd status
+   $ kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph df
+   $ kubectl -n rook-ceph exec ${ROOK_CEPH_TOOLS_POD} -- ceph osd df
 
 List the Persistent Volume Claims
 
