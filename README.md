@@ -11,7 +11,7 @@ By running the scripts you got access to 4 node cluster running on VMs.
 * [run-kubespray.sh](run-kubespray.sh) - script is using [Kubespray](https://github.com/kubernetes-incubator/kubespray) to build enterprise ready cluster
 * [run-kubeadm-demo.sh](run-kubeadm-demo.sh) - script showing Kubernetes basics using [demo-magic](https://github.com/paxtonhare/demo-magic) script
 * [build_kubernetes_kubeadm-demo.sh](build_kubernetes_kubeadm-demo.sh) - demo script showing Kubernetes installation using [kubeadm](https://github.com/kubernetes/kubeadm) on Ubuntu 18.04
-* [build_kubernetes_kubespray-demo.sh](build_kubernetes_kubespray-demo.sh) - demo script showing Kubernetes installation using [kubespray](https://github.com/kubernetes-incubator/kubespray) on Ubuntu 18.04
+* [build_kubernetes_kubespray-demo.sh](build_kubernetes_kubespray-demo.sh) - demo script showing Kubernetes installation using [Kubespray](https://github.com/kubernetes-incubator/kubespray) on Ubuntu 18.04
 
 ## Requirements
 
