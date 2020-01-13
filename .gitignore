@@ -1,6 +1,13 @@
 .vagrant
+
+# demo-magic.sh script
 demo-magic.sh
+
 files
+
+# Kubernetes kubeconfig file
 kubeconfig.conf
+
 kubespray
+
 nohup.out
